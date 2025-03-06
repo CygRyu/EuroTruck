@@ -579,11 +579,22 @@
             return Math.sqrt(dx * dx + dy * dy) * 5; // Scale to get reasonable km distances
         }
 
-	// Calculate fuel cost based on distance, truck efficiency, and current fuel price
-function calculateFuelCost(distance, fuelEfficiency, fuelPrice) {
-    const fuelConsumed = distance * fuelEfficiency; // Liters
-    return Math.round(fuelConsumed * fuelPrice); // Cost in euros
-}
+        function calculateHiringCost(driver) {
+            const baseCost = 1000; // Base hiring cost
+            const skillBonus = (driver.skill - 1) * 500; // Skill bonus
+            const experienceBonus = driver.experience * 300; // Experience bonus
+
+            // Calculate total hiring cost
+            const totalCost = baseCost + skillBonus + experienceBonus;
+
+            return Math.round(totalCost); // Round to nearest integer
+        }
+
+        // Calculate fuel cost based on distance, truck efficiency, and current fuel price
+        function calculateFuelCost(distance, fuelEfficiency, fuelPrice) {
+            const fuelConsumed = distance * fuelEfficiency; // Liters
+            return Math.round(fuelConsumed * fuelPrice); // Cost in euros
+        }
         
         // Calculate the commission percentage for a driver
         function calculateDriverCommission(driver) {
@@ -685,57 +696,61 @@ function calculateFuelCost(distance, fuelEfficiency, fuelPrice) {
         }
         
         function loadGameState() {
-            const savedState = localStorage.getItem('euroTruckManager');
-            if (savedState) {
-                try {
-                    const parsedState = JSON.parse(savedState);
-                    
-                    // Check for version compatibility
-                    if (!parsedState.version) {
-                        parsedState.version = "1.0"; // Set default version for older saves
-                    }
-                    
-                    // Add skillProgress to drivers for older versions that don't have it
-                    if (parsedState.version === "1.0") {
-                        parsedState.drivers.forEach(driver => {
-                            if (!driver.hasOwnProperty('skillProgress')) {
-                                driver.skillProgress = 0;
-                            }
-                        });
-                        parsedState.version = "1.1";
-                    }
-                    
-                    // Update to version 1.2 with maintenance system
-                    if (parsedState.version === "1.1") {
-                        if (!parsedState.hasOwnProperty('maintenanceLevel')) {
-                            parsedState.maintenanceLevel = "Basic";
-                        }
-                        parsedState.version = "1.2";
-                    }
-                    
-                    // Update to version 1.3 with mechanics count
-                    if (parsedState.version === "1.2") {
-                        if (!parsedState.hasOwnProperty('mechanicsCount')) {
-                            parsedState.mechanicsCount = 2;
-                        }
-                        parsedState.version = "1.3";
-                    }
-                    
-                    gameState = parsedState;
-                    updateGameDisplay();
-                } catch (e) {
-                    console.error("Error loading saved game:", e);
-                    showNotification("Error loading saved game", "error");
-                    // Generate new game state with initial jobs
-                    gameState.jobs = generateRandomJobs(8);
-                    saveGameState();
-                }
-            } else {
-                // New game - generate initial jobs
-                gameState.jobs = generateRandomJobs(8);
-                saveGameState();
+    const savedState = localStorage.getItem('euroTruckManager');
+    if (savedState) {
+        try {
+            const parsedState = JSON.parse(savedState);
+            
+            // Check for version compatibility
+            if (!parsedState.version) {
+                parsedState.version = "1.0"; // Set default version for older saves
             }
+            
+            // Add skillProgress to drivers for older versions that don't have it
+            if (parsedState.version === "1.0") {
+                parsedState.drivers.forEach(driver => {
+                    if (!driver.hasOwnProperty('skillProgress')) {
+                        driver.skillProgress = 0;
+                    }
+                });
+                parsedState.version = "1.1";
+            }
+            
+            // Update to version 1.2 with maintenance system
+            if (parsedState.version === "1.1") {
+                if (!parsedState.hasOwnProperty('maintenanceLevel')) {
+                    parsedState.maintenanceLevel = "Basic";
+                }
+                parsedState.version = "1.2";
+            }
+            
+            // Update to version 1.3 with mechanics count
+            if (parsedState.version === "1.2") {
+                if (!parsedState.hasOwnProperty('mechanicsCount')) {
+                    parsedState.mechanicsCount = 2;
+                }
+                parsedState.version = "1.3";
+            }
+            
+            gameState = parsedState;
+            updateGameDisplay();
+        } catch (e) {
+            console.error("Error loading saved game:", e);
+            showNotification("Error loading saved game", "error");
+            // Generate new game state with initial jobs
+            gameState.jobs = generateRandomJobs(8);
+            saveGameState();
         }
+    } else {
+        // New game - generate initial jobs and randomize starting fuel cost
+        gameState.jobs = generateRandomJobs(8);
+        
+        // Randomize starting fuel cost between €1.20 and €2.20
+        gameState.fuelPrice = Math.round((Math.random() * 1.00 + 1.20) * 100) / 100;
+        
+        saveGameState();
+    }
+}
         
         // Base64 encoding/decoding functions for save data export/import
         function exportGameSave() {
@@ -804,39 +819,39 @@ function calculateFuelCost(distance, fuelEfficiency, fuelPrice) {
                 return false;
             }
         }
-	// Function to update fuel prices periodically
-function updateFuelPrices() {
-    // Base fluctuation - small random changes: +/- 3-5%
-    const fluctuationPercent = (Math.random() * 0.06) - 0.03; // -3% to +3%
-    
-    // Current price as base
-    let newPrice = gameState.fuelPrice * (1 + fluctuationPercent);
-    
-    // Occasional larger swings (10% chance of +/- 7-12%)
-    if (Math.random() < 0.1) {
-        const swingDirection = Math.random() > 0.5 ? 1 : -1;
-        const swingMagnitude = 0.07 + (Math.random() * 0.05);
-        newPrice *= (1 + (swingDirection * swingMagnitude));
-    }
-    
-    // Ensure price stays within reasonable bounds (€1.20 - €2.20)
-    newPrice = Math.max(1.20, Math.min(2.20, newPrice));
-    
-    // Round to 2 decimal places
-    gameState.fuelPrice = Math.round(newPrice * 100) / 100;
-    
-    // Update display
-    document.getElementById('fuel-price-display').textContent = `€${gameState.fuelPrice.toFixed(2)}/L`;
-    
-    // If price jumped significantly, show a notification
-    if (Math.abs(fluctuationPercent) > 0.025) {
-        const direction = fluctuationPercent > 0 ? "increased" : "decreased";
-        showNotification(`Fuel prices have ${direction} to €${gameState.fuelPrice.toFixed(2)}/L!`, 'info');
-    }
-    
-    // Save state
-    saveGameState();
-}
+        // Function to update fuel prices periodically
+        function updateFuelPrices() {
+            // Base fluctuation - small random changes: +/- 3-5%
+            const fluctuationPercent = (Math.random() * 0.06) - 0.03; // -3% to +3%
+            
+            // Current price as base
+            let newPrice = gameState.fuelPrice * (1 + fluctuationPercent);
+            
+            // Occasional larger swings (10% chance of +/- 7-12%)
+            if (Math.random() < 0.1) {
+                const swingDirection = Math.random() > 0.5 ? 1 : -1;
+                const swingMagnitude = 0.07 + (Math.random() * 0.05);
+                newPrice *= (1 + (swingDirection * swingMagnitude));
+            }
+            
+            // Ensure price stays within reasonable bounds (€1.20 - €2.20)
+            newPrice = Math.max(1.20, Math.min(2.20, newPrice));
+            
+            // Round to 2 decimal places
+            gameState.fuelPrice = Math.round(newPrice * 100) / 100;
+            
+            // Update display
+            document.getElementById('fuel-price-display').textContent = `€${gameState.fuelPrice.toFixed(2)}/L`;
+            
+            // If price jumped significantly, show a notification
+            if (Math.abs(fluctuationPercent) > 0.025) {
+                const direction = fluctuationPercent > 0 ? "increased" : "decreased";
+                showNotification(`Fuel prices have ${direction} to €${gameState.fuelPrice.toFixed(2)}/L!`, 'info');
+            }
+            
+            // Save state
+            saveGameState();
+        }
         
         function updateGameState() {
             const now = Date.now();
@@ -927,20 +942,20 @@ function updateFuelPrices() {
                 const companyPayment = job.payment - driverPayment;
                 
                 // Calculate fuel costs
-const truck = gameState.trucks.find(t => t.id === job.assignedTruckId);
-let fuelCost = 0;
-if (truck) {
-    fuelCost = calculateFuelCost(job.distance, truck.fuelEfficiency, gameState.fuelPrice);
-}
+                const truck = gameState.trucks.find(t => t.id === job.assignedTruckId);
+                let fuelCost = 0;
+                if (truck) {
+                    fuelCost = calculateFuelCost(job.distance, truck.fuelEfficiency, gameState.fuelPrice);
+                }
 
-// Add company's share to balance, minus fuel costs
-const netCompanyPayment = companyPayment - fuelCost;
-gameState.money += netCompanyPayment;
+                // Add company's share to balance, minus fuel costs
+                const netCompanyPayment = companyPayment - fuelCost;
+                gameState.money += netCompanyPayment;
 
-// Show fuel cost info if significant
-if (fuelCost > 0) {
-    showNotification(`Fuel cost for the trip: ${formatMoney(fuelCost)}`, 'info');
-}
+                // Show fuel cost info if significant
+                if (fuelCost > 0) {
+                    showNotification(`Fuel cost for the trip: ${formatMoney(fuelCost)}`, 'info');
+                }
                 
                 // Keep track of driver earnings
                 driver.totalEarnings = (driver.totalEarnings || 0) + driverPayment;
@@ -1919,15 +1934,15 @@ if (fuelCost > 0) {
                         <div>${job.weight} tons</div>
                     </div>
                 </div>
-		<div class="mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded">
-    <div class="text-xs font-medium mb-1">Estimated Expenses</div>
-    <div class="grid grid-cols-2 gap-y-1 text-xs">
-        <div>Est. Fuel Cost:</div>
-        <div>${formatMoney(calculateFuelCost(job.distance, 0.35, gameState.fuelPrice))} - ${formatMoney(calculateFuelCost(job.distance, 0.30, gameState.fuelPrice))}</div>
-        <div>Current Fuel Price:</div>
-        <div>€${gameState.fuelPrice.toFixed(2)}/L</div>
-    </div>
-</div>
+                <div class="mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs font-medium mb-1">Estimated Expenses</div>
+                    <div class="grid grid-cols-2 gap-y-1 text-xs">
+                        <div>Est. Fuel Cost:</div>
+                        <div>${formatMoney(calculateFuelCost(job.distance, 0.35, gameState.fuelPrice))} - ${formatMoney(calculateFuelCost(job.distance, 0.30, gameState.fuelPrice))}</div>
+                        <div>Current Fuel Price:</div>
+                        <div>€${gameState.fuelPrice.toFixed(2)}/L</div>
+                    </div>
+                </div>
             `;
             
             // List available drivers
@@ -2231,11 +2246,11 @@ if (fuelCost > 0) {
                 // Sort by commission (lowest first)
                 availableDrivers.sort((a, b) => calculateDriverCommission(a) - calculateDriverCommission(b));
                 
-                // Create UI elements
+                // Create UI elements for each available driver
                 availableDrivers.forEach(driver => {
-                    const hiringCost = 2000; // Fixed cost to hire a driver
-                    const canAfford = gameState.money >= hiringCost;
+                    const hiringCost = calculateHiringCost(driver);
                     const commissionPercentage = calculateDriverCommission(driver);
+                    const canAfford = gameState.money >= hiringCost;
                     
                     const driverElement = document.createElement('div');
                     driverElement.className = `bg-gray-100 dark:bg-gray-700 p-3 rounded ${!canAfford ? 'opacity-50' : ''}`;
@@ -2254,6 +2269,7 @@ if (fuelCost > 0) {
                             data-driver-salary="${driver.salary}"
                             data-driver-skill="${driver.skill}"
                             data-driver-experience="${driver.experience}"
+                            data-hiring-cost="${hiringCost}"
                             ${!canAfford ? 'disabled' : ''}>
                             ${canAfford ? 'Hire' : 'Insufficient Funds'}
                         </button>
@@ -2435,8 +2451,8 @@ if (fuelCost > 0) {
             // Game loop - update fatigue every 60 seconds (60000 milliseconds)
             setInterval(updateFatigueOverTime, 60000);
 
-	    // Game loop - update fuel prices every 8 minutes (480000 milliseconds)
-	    setInterval(updateFuelPrices, 480000);
+            // Game loop - update fuel prices every 8 minutes (480000 milliseconds)
+            setInterval(updateFuelPrices, 480000);
 
             // Setup job refresh every 5 minutes
             setInterval(() => {
@@ -2574,19 +2590,25 @@ if (fuelCost > 0) {
         }
         
         function hireDriver(driver) {
+            const hiringCost = calculateHiringCost(driver);
+
+            if (gameState.money < hiringCost) {
+                showNotification('Insufficient funds to hire this driver!', 'error');
+                return;
+            }
+
             // Deduct hiring cost
-            const hiringCost = 2000; // Fixed cost to hire a driver
             gameState.money -= hiringCost;
-            
+
             // Add to drivers
             gameState.drivers.push(driver);
-            
+
             // Close modal
             document.getElementById('driver-hire-modal').classList.add('hidden');
-            
+
             // Show notification
-            showNotification(`Hired driver ${driver.name}!`, 'success');
-            
+            showNotification(`Hired driver ${driver.name} for ${formatMoney(hiringCost)}!`, 'success');
+
             // Update game state
             saveGameState();
             updateGameDisplay();
