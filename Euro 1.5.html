@@ -1,0 +1,2692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Euro Truck Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#4A4A8F',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                        danger: '#EF4444',
+                        light: '#F3F4F6',
+                        dark: '#1F2937',
+                    }
+                }
+            },
+            darkMode: 'class'
+        }
+    </script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #2D3748;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4A5568;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #718096;
+        }
+        
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .animate-pulse-slow {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Progress bar animation */
+        @keyframes progress {
+            from { width: 0%; }
+            to { width: 100%; }
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        .dark .dark\:invert {
+            filter: invert(1);
+        }
+        
+        /* Maintenance progress animation */
+        .maintenance-progress-bar {
+            background: linear-gradient(90deg, var(--tw-gradient-stops));
+            background-size: 200% 100%;
+            animation: maintenance-progress 3s linear infinite;
+        }
+        
+        @keyframes maintenance-progress {
+            0% { background-position: 0% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-900 dark:bg-gray-900 dark:text-gray-100 transition-colors duration-200">
+    <div class="container mx-auto px-2 py-2 max-w-4xl">
+        <!-- Header -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-md p-3 mb-3">
+            <div class="flex flex-wrap justify-between items-center">
+                <h1 class="text-xl font-bold text-primary dark:text-blue-400">Euro Truck Manager</h1>
+                <div class="flex items-center space-x-2">
+                    <!-- Support Buttons -->
+                    <div class="dropdown relative inline-block">
+                        <button class="text-sm bg-primary hover:bg-secondary text-white py-1 px-2 rounded flex items-center">
+                            <span>Support</span>
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu hidden absolute right-0 mt-1 bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 z-10 min-w-[120px]">
+                            <a href="https://ko-fi.com/cygryu" target="_blank" rel="noopener noreferrer" class="block px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Ko-Fi</a>
+                            <a href="https://www.paypal.com/paypalme/sofiansu?country.x=ID&locale.x=en_US" target="_blank" rel="noopener noreferrer" class="block px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded">PayPal</a>
+                        </div>
+                    </div>
+                    <!-- Save/Load Buttons -->
+                    <div class="dropdown relative inline-block">
+                        <button class="text-sm bg-primary hover:bg-secondary text-white py-1 px-2 rounded flex items-center">
+                            <span>Save/Load</span>
+                            <svg class="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                            </svg>
+                        </button>
+                        <div class="dropdown-menu hidden absolute right-0 mt-1 bg-white dark:bg-gray-800 shadow-lg rounded-md p-2 z-10 min-w-[120px]">
+                            <button id="export-save" class="block w-full text-left px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Export Save</button>
+                            <button id="import-save" class="block w-full text-left px-2 py-1 text-sm hover:bg-gray-100 dark:hover:bg-gray-700 rounded">Import Save</button>
+                        </div>
+                    </div>
+                    <!-- Dark Mode Toggle -->
+                    <button id="dark-mode-toggle" class="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 my-2 text-sm">
+                <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Money</div>
+                    <div class="font-mono font-medium" id="money-display">€100,000</div>
+                </div>
+                <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Reputation</div>
+                    <div class="font-mono font-medium" id="reputation-display">100</div>
+                </div>
+                <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Fuel Price</div>
+                    <div class="font-mono font-medium" id="fuel-price-display">€1.42/L</div>
+                </div>
+                <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs text-gray-500 dark:text-gray-400">Region</div>
+                    <div class="font-mono font-medium" id="region-display">Central Europe</div>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="flex justify-between text-xs bg-gray-200 dark:bg-gray-700 rounded p-1 mb-2">
+                <div><span id="trucks-count">0</span> trucks</div>
+                <div><span id="drivers-count">0</span> drivers</div>
+                <div><span id="active-jobs-count">0</span> active jobs</div>
+                <div><span id="available-jobs-count">0</span> available jobs</div>
+            </div>
+        </div>
+        
+        <!-- Tab Navigation -->
+        <div class="flex overflow-x-auto bg-white dark:bg-gray-800 rounded-t-lg shadow-md mb-px">
+            <button class="tab-button flex-1 py-2 px-3 text-sm font-medium border-b-2 border-primary" data-tab="dashboard">Dashboard</button>
+            <button class="tab-button flex-1 py-2 px-3 text-sm font-medium border-b-2 border-transparent" data-tab="trucks">Trucks</button>
+            <button class="tab-button flex-1 py-2 px-3 text-sm font-medium border-b-2 border-transparent" data-tab="jobs">Jobs</button>
+            <button class="tab-button flex-1 py-2 px-3 text-sm font-medium border-b-2 border-transparent" data-tab="drivers">Drivers</button>
+            <button class="tab-button flex-1 py-2 px-3 text-sm font-medium border-b-2 border-transparent" data-tab="garage">Garage</button>
+        </div>
+        
+        <!-- Tab Content -->
+        <div class="bg-white dark:bg-gray-800 rounded-b-lg shadow-md p-3 mb-3">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content active">
+                <h2 class="text-lg font-bold mb-3">Dashboard</h2>
+                
+                <!-- Active Jobs -->
+                <div class="mb-4">
+                    <h3 class="text-sm font-semibold mb-1">Active Deliveries</h3>
+                    <div id="active-jobs-container" class="space-y-2 mb-2 max-h-40 overflow-y-auto">
+                        <!-- Active jobs will be listed here -->
+                        <div class="text-sm text-gray-500 dark:text-gray-400 italic">No active deliveries</div>
+                    </div>
+                </div>
+                
+                <!-- Fleet Summary -->
+                <div class="mb-4">
+                    <h3 class="text-sm font-semibold mb-1">Your Fleet</h3>
+                    <div id="fleet-summary" class="text-sm">
+                        <!-- Fleet summary will appear here -->
+                        <div class="text-gray-500 dark:text-gray-400 italic">No trucks owned</div>
+                    </div>
+                </div>
+
+                <!-- Maintenance Summary -->
+                <div class="mb-4">
+                    <h3 class="text-sm font-semibold mb-1">Maintenance Status</h3>
+                    <div id="maintenance-summary" class="text-sm">
+                        <!-- Maintenance summary will appear here -->
+                        <div class="text-gray-500 dark:text-gray-400 italic">No trucks in maintenance</div>
+                    </div>
+                </div>
+                
+                <!-- Quick actions -->
+                <div class="grid grid-cols-2 gap-2 mt-4">
+                    <button class="tab-button bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white py-2 rounded text-sm" data-tab="jobs">Find Jobs</button>
+                    <button class="tab-button bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white py-2 rounded text-sm" data-tab="trucks">Manage Trucks</button>
+                </div>
+            </div>
+            
+            <!-- Trucks Tab -->
+            <div id="trucks-tab" class="tab-content">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold">Your Trucks</h2>
+                    <button id="buy-truck-btn" class="bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white py-1 px-3 rounded text-sm">Buy New Truck</button>
+                </div>
+                
+                <div id="trucks-list" class="space-y-2 mb-4 max-h-72 overflow-y-auto">
+                    <!-- Trucks will be listed here -->
+                    <div class="text-sm text-gray-500 dark:text-gray-400 italic">No trucks owned</div>
+                </div>
+                
+                <!-- Truck Purchase Modal -->
+                <div id="truck-purchase-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-md w-full max-h-[80vh] overflow-y-auto">
+                        <h3 class="text-lg font-bold mb-3">Buy New Truck</h3>
+                        <div id="available-trucks" class="space-y-3">
+                            <!-- Available trucks will be listed here -->
+                        </div>
+                        <div class="flex justify-end mt-4">
+                            <button id="close-purchase-modal" class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 py-1 px-3 rounded text-sm mr-2">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Truck Detail Modal -->
+                <div id="truck-detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-md w-full max-h-[80vh] overflow-y-auto">
+                        <h3 class="text-lg font-bold mb-3" id="truck-detail-title">Truck Details</h3>
+                        <div id="truck-detail-content">
+                            <!-- Truck details will appear here -->
+                        </div>
+                        <div class="flex justify-end mt-4">
+                            <button id="close-detail-modal" class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 py-1 px-3 rounded text-sm mr-2">Close</button>
+                            <button id="repair-truck-btn" class="bg-warning hover:bg-yellow-600 text-white py-1 px-3 rounded text-sm mr-2 hidden">Repair</button>
+                            <button id="sell-truck-btn" class="bg-danger hover:bg-red-600 text-white py-1 px-3 rounded text-sm">Sell Truck</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Jobs Tab -->
+            <div id="jobs-tab" class="tab-content">
+                <h2 class="text-lg font-bold mb-3">Available Jobs</h2>
+                
+                <div id="available-jobs" class="space-y-2 mb-4 max-h-72 overflow-y-auto">
+                    <!-- Available jobs will be listed here -->
+                    <div class="text-sm text-gray-500 dark:text-gray-400 italic">Loading available jobs...</div>
+                </div>
+                
+                <!-- Job Detail Modal -->
+                <div id="job-detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-md w-full max-h-[80vh] overflow-y-auto">
+                        <h3 class="text-lg font-bold mb-3" id="job-detail-title">Job Details</h3>
+                        <div id="job-detail-content">
+                            <!-- Job details will appear here -->
+                        </div>
+                        <div id="job-assignment-section" class="mt-4">
+                            <h4 class="text-sm font-semibold mb-2">Assign to:</h4>
+                            <div id="available-drivers-for-job" class="space-y-2 mb-3">
+                                <!-- Available drivers will be listed here -->
+                            </div>
+                            <div id="available-trucks-for-job" class="space-y-2 mb-3">
+                                <!-- Available trucks will be listed here -->
+                            </div>
+                        </div>
+                        <div class="flex justify-end mt-4">
+                            <button id="close-job-modal" class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 py-1 px-3 rounded text-sm mr-2">Close</button>
+                            <button id="accept-job-btn" class="bg-success hover:bg-green-600 text-white py-1 px-3 rounded text-sm" disabled>Accept Job</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Drivers Tab -->
+            <div id="drivers-tab" class="tab-content">
+                <div class="flex justify-between items-center mb-3">
+                    <h2 class="text-lg font-bold">Your Drivers</h2>
+                    <button id="hire-driver-btn" class="bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white py-1 px-3 rounded text-sm">Hire Driver</button>
+                </div>
+                
+                <div id="drivers-list" class="space-y-2 mb-4 max-h-72 overflow-y-auto">
+                    <!-- Drivers will be listed here -->
+                    <div class="text-sm text-gray-500 dark:text-gray-400 italic">No drivers hired</div>
+                </div>
+                
+                <!-- Driver Hire Modal -->
+                <div id="driver-hire-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-md w-full max-h-[80vh] overflow-y-auto">
+                        <h3 class="text-lg font-bold mb-3">Hire Driver</h3>
+                        <div id="available-drivers" class="space-y-3">
+                            <!-- Available drivers will be listed here -->
+                        </div>
+                        <div class="flex justify-end mt-4">
+                            <button id="close-hire-modal" class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 py-1 px-3 rounded text-sm mr-2">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Driver Detail Modal -->
+                <div id="driver-detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-md w-full max-h-[80vh] overflow-y-auto">
+                        <h3 class="text-lg font-bold mb-3" id="driver-detail-title">Driver Details</h3>
+                        <div id="driver-detail-content">
+                            <!-- Driver details will appear here -->
+                        </div>
+                        <div class="flex justify-end mt-4">
+                            <button id="close-driver-detail-modal" class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 py-1 px-3 rounded text-sm mr-2">Close</button>
+                            <button id="fire-driver-btn" class="bg-danger hover:bg-red-600 text-white py-1 px-3 rounded text-sm">Fire Driver</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Garage Tab -->
+            <div id="garage-tab" class="tab-content">
+                <h2 class="text-lg font-bold mb-3">Your Garage</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded">
+                        <h3 class="text-sm font-semibold mb-2">Garage Status</h3>
+                        <div class="text-xs space-y-1">
+                            <div class="flex justify-between">
+                                <span>Location:</span>
+                                <span>Berlin, Germany</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Capacity:</span>
+                                <span id="garage-capacity">3 trucks</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Maintenance Level:</span>
+                                <span id="maintenance-level">Basic</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Staff:</span>
+                                <span id="mechanics-count">2 mechanics</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded">
+                        <h3 class="text-sm font-semibold mb-2">Upgrades Available</h3>
+                        <div class="text-xs space-y-2">
+                            <div>
+                                <div class="flex justify-between">
+                                    <span>Expanded Parking (5 trucks)</span>
+                                    <span>€25,000</span>
+                                </div>
+                                <button class="w-full mt-1 py-1 px-2 bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded text-xs" id="upgrade-capacity">Upgrade</button>
+                            </div>
+                            <div>
+                                <div class="flex justify-between">
+                                    <span>Advanced Maintenance</span>
+                                    <span>€35,000</span>
+                                </div>
+                                <button class="w-full mt-1 py-1 px-2 bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded text-xs" id="upgrade-maintenance">Upgrade</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mechanics Upgrades -->
+                <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded">
+                    <h3 class="text-sm font-semibold mb-2">Mechanic Staff</h3>
+                    <div class="text-xs mb-2">
+                        More mechanics can speed up truck repairs.
+                    </div>
+                    <div id="mechanics-upgrades" class="space-y-2">
+                        <div class="upgrade-item" id="mechanic3-upgrade">
+                            <div class="flex justify-between">
+                                <span>Hire 3rd Mechanic (20% faster repairs)</span>
+                                <span>€20,000</span>
+                            </div>
+                            <button class="w-full mt-1 py-1 px-2 bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded text-xs" id="hire-mechanic-3">Hire</button>
+                        </div>
+                        <div class="upgrade-item hidden" id="mechanic4-upgrade">
+                            <div class="flex justify-between">
+                                <span>Hire 4th Mechanic (30% faster repairs total)</span>
+                                <span>€30,000</span>
+                            </div>
+                            <button class="w-full mt-1 py-1 px-2 bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded text-xs" id="hire-mechanic-4">Hire</button>
+                        </div>
+                        <div class="upgrade-item hidden" id="mechanic5-upgrade">
+                            <div class="flex justify-between">
+                                <span>Hire 5th Mechanic (50% faster repairs total)</span>
+                                <span>€45,000</span>
+                            </div>
+                            <button class="w-full mt-1 py-1 px-2 bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded text-xs" id="hire-mechanic-5">Hire</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded">
+                    <h3 class="text-sm font-semibold mb-2">Trucks in Garage</h3>
+                    <div id="garage-trucks" class="text-xs space-y-2">
+                        <!-- Trucks in garage will be listed here -->
+                        <div class="text-gray-500 dark:text-gray-400 italic">No trucks in garage</div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded">
+                    <h3 class="text-sm font-semibold mb-2">Maintenance Bay</h3>
+                    <div id="maintenance-bay" class="text-xs space-y-2">
+                        <!-- Trucks in maintenance will be listed here -->
+                        <div class="text-gray-500 dark:text-gray-400 italic">No trucks in maintenance</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notification Area -->
+        <div id="notification-area" class="fixed bottom-4 right-4 z-50 w-72 max-w-full"></div>
+        
+        <!-- Import Save Modal -->
+        <div id="import-save-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-4 max-w-md w-full">
+                <h3 class="text-lg font-bold mb-3">Import Save Data</h3>
+                <textarea id="import-save-data" class="w-full h-32 p-2 border dark:border-gray-600 rounded text-sm dark:bg-gray-700" placeholder="Paste your save data here..."></textarea>
+                <div class="flex justify-end mt-4">
+                    <button id="close-import-modal" class="bg-gray-300 hover:bg-gray-400 dark:bg-gray-700 dark:hover:bg-gray-600 py-1 px-3 rounded text-sm mr-2">Cancel</button>
+                    <button id="confirm-import" class="bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white py-1 px-3 rounded text-sm">Import</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="mt-3 text-center text-xs text-gray-500 dark:text-gray-400">
+            <p>Developed by CygRyu © 2025</p>
+        </div>
+    </div>
+
+    <script>
+        // Dark mode toggle
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        
+        // Check for dark mode preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.documentElement.classList.add('dark');
+        }
+        
+        // Listen for dark mode preference changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+            if (event.matches) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        });
+        
+        // Dark mode toggle button
+        darkModeToggle.addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+        });
+        
+        // Game state
+        let gameState = {
+            version: "1.3", // Updated version for mechanics and commission systems
+            money: 100000,
+            reputation: 100,
+            fuelPrice: 1.42,
+            region: "Central Europe",
+            lastTimestamp: Date.now(),
+            trucks: [],
+            drivers: [],
+            jobs: [],
+            activeJobs: [],
+            garageCapacity: 3,
+            maintenanceLevel: "Basic", // Basic or Advanced
+            mechanicsCount: 2 // Starting with 2 mechanics
+        };
+        
+        // Truck models
+        const truckModels = [
+            {
+                id: "scania_r450",
+                brand: "Scania",
+                model: "R450",
+                price: 110000,
+                capacity: 24,
+                fuelEfficiency: 0.35, // L/km
+                speed: 85, // km/h
+                maintenance: 0.15, // € per km
+                reliability: 0.9, // 0-1
+                image: "🚚" // Using emoji as placeholder
+            },
+            {
+                id: "volvo_fh16",
+                brand: "Volvo",
+                model: "FH16",
+                price: 125000,
+                capacity: 26,
+                fuelEfficiency: 0.33,
+                speed: 90,
+                maintenance: 0.17,
+                reliability: 0.92,
+                image: "🚛"
+            },
+            {
+                id: "mercedes_actros",
+                brand: "Mercedes",
+                model: "Actros",
+                price: 135000,
+                capacity: 28,
+                fuelEfficiency: 0.3,
+                speed: 88,
+                maintenance: 0.18,
+                reliability: 0.94,
+                image: "🚚"
+            },
+            {
+                id: "man_tgx",
+                brand: "MAN",
+                model: "TGX",
+                price: 95000,
+                capacity: 22,
+                fuelEfficiency: 0.38,
+                speed: 83,
+                maintenance: 0.14,
+                reliability: 0.88,
+                image: "🚚"
+            }
+        ];
+        
+        // Driver templates
+        const driverTemplates = [
+            { name: "John Smith", salary: 800, skill: 3, experience: 2, fatigue: 0, skillProgress: 0 },
+            { name: "Emma Davis", salary: 950, skill: 4, experience: 3, fatigue: 0, skillProgress: 0 },
+            { name: "Michael Brown", salary: 750, skill: 2, experience: 1, fatigue: 0, skillProgress: 0 },
+            { name: "Sophia Wilson", salary: 1100, skill: 5, experience: 4, fatigue: 0, skillProgress: 0 },
+            { name: "James Johnson", salary: 850, skill: 3, experience: 2, fatigue: 0, skillProgress: 0 },
+            { name: "Olivia Martinez", salary: 920, skill: 4, experience: 3, fatigue: 0, skillProgress: 0 },
+            { name: "Robert Taylor", salary: 780, skill: 2, experience: 1, fatigue: 0, skillProgress: 0 },
+            { name: "Isabella Anderson", salary: 1050, skill: 5, experience: 4, fatigue: 0, skillProgress: 0 }
+        ];
+        
+        // Cities
+        const cities = [
+            { name: "Berlin", country: "Germany", x: 400, y: 250 },
+            { name: "Paris", country: "France", x: 250, y: 300 },
+            { name: "Madrid", country: "Spain", x: 150, y: 400 },
+            { name: "Rome", country: "Italy", x: 350, y: 400 },
+            { name: "London", country: "UK", x: 200, y: 220 },
+            { name: "Amsterdam", country: "Netherlands", x: 280, y: 220 },
+            { name: "Vienna", country: "Austria", x: 400, y: 300 },
+            { name: "Warsaw", country: "Poland", x: 450, y: 230 },
+            { name: "Prague", country: "Czech Republic", x: 380, y: 280 },
+            { name: "Budapest", country: "Hungary", x: 420, y: 320 }
+        ];
+        
+        // Cargo types
+        const cargoTypes = [
+            { type: "General Goods", baseRate: 0.9, riskFactor: 0.05 },
+            { type: "Construction Materials", baseRate: 1.0, riskFactor: 0.08 },
+            { type: "Food Products", baseRate: 1.1, riskFactor: 0.1 },
+            { type: "Electronic Equipment", baseRate: 1.3, riskFactor: 0.15 },
+            { type: "Machinery", baseRate: 1.2, riskFactor: 0.12 },
+            { type: "Automotive Parts", baseRate: 1.15, riskFactor: 0.1 },
+            { type: "Chemicals", baseRate: 1.4, riskFactor: 0.2 },
+            { type: "Furniture", baseRate: 1.05, riskFactor: 0.07 },
+            { type: "Clothing", baseRate: 0.95, riskFactor: 0.05 },
+            { type: "Medical Supplies", baseRate: 1.25, riskFactor: 0.1 }
+        ];
+        
+        // Helper functions
+        function formatMoney(amount) {
+            return '€' + amount.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+        }
+        
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${hours}h ${minutes}m`;
+        }
+        
+        function calculateDistance(city1, city2) {
+            const dx = city1.x - city2.x;
+            const dy = city1.y - city2.y;
+            return Math.sqrt(dx * dx + dy * dy) * 5; // Scale to get reasonable km distances
+        }
+
+	// Calculate fuel cost based on distance, truck efficiency, and current fuel price
+function calculateFuelCost(distance, fuelEfficiency, fuelPrice) {
+    const fuelConsumed = distance * fuelEfficiency; // Liters
+    return Math.round(fuelConsumed * fuelPrice); // Cost in euros
+}
+        
+        // Calculate the commission percentage for a driver
+        function calculateDriverCommission(driver) {
+            // Base rate: 10%
+            // Skill bonus: 0.5% per skill level (0.5% to 5% for skill levels 1-10)
+            // Experience bonus: 0.2% per year of experience (up to 2% max)
+            const baseRate = 10;
+            const skillBonus = driver.skill * 0.5;
+            const experienceBonus = Math.min(2, driver.experience * 0.2);
+            
+            return baseRate + skillBonus + experienceBonus;
+        }
+        
+        // Format commission percentage for display
+        function formatCommissionPercentage(percentage) {
+            return percentage.toFixed(1) + '%';
+        }
+
+        // Calculate repair cost for a truck
+        function calculateRepairCost(truck, conditionToRepair) {
+            const baseRepairCost = truck.price * (conditionToRepair / 100) * 0.1; // 10% of proportional value
+            
+            // Advanced maintenance level reduces costs by 25%
+            if (gameState.maintenanceLevel === "Advanced") {
+                return Math.round(baseRepairCost * 0.75);
+            }
+            return Math.round(baseRepairCost);
+        }
+
+        // Get time required for maintenance
+        function getMaintenanceTime(conditionToRepair) {
+            // Base time: 1-3 minutes real time depending on damage
+            let baseMinutes = 1 + (conditionToRepair / 50) * 2;
+            
+            // Advanced maintenance level speeds up repairs by 30%
+            if (gameState.maintenanceLevel === "Advanced") {
+                baseMinutes *= 0.7;
+            }
+            
+            // Apply mechanic count bonus
+            let mechanicsSpeedBonus = 1.0; // Default with 2 mechanics
+            if (gameState.mechanicsCount >= 3) mechanicsSpeedBonus -= 0.2; // 20% faster with 3 mechanics
+            if (gameState.mechanicsCount >= 4) mechanicsSpeedBonus -= 0.1; // 30% faster with 4 mechanics
+            if (gameState.mechanicsCount >= 5) mechanicsSpeedBonus -= 0.2; // 50% faster with 5 mechanics
+            
+            baseMinutes *= mechanicsSpeedBonus;
+            
+            return Math.ceil(baseMinutes * 60 * 1000); // Convert to milliseconds
+        }
+
+        // Fatigue management
+        function updateFatigueOverTime() {
+            gameState.drivers.forEach(driver => {
+                if (driver.status === 'available') {
+                    // Experience increases recovery rate (5-10% based on experience)
+                    const recoveryBonus = Math.min(5, driver.experience * 0.5);
+                    driver.fatigue = Math.max(0, driver.fatigue - (5 + recoveryBonus)); 
+                }
+            });
+        }
+        
+        function generateRandomJobs(count = 5) {
+            const jobs = [];
+            for (let i = 0; i < count; i++) {
+                const fromCity = cities[Math.floor(Math.random() * cities.length)];
+                let toCity;
+                do {
+                    toCity = cities[Math.floor(Math.random() * cities.length)];
+                } while (toCity.name === fromCity.name);
+                
+                const cargo = cargoTypes[Math.floor(Math.random() * cargoTypes.length)];
+                const distance = calculateDistance(fromCity, toCity);
+                const weight = Math.floor(Math.random() * 15) + 5; // 5-20 tons
+                const basePayment = distance * weight * cargo.baseRate;
+                const payment = Math.round(basePayment * (0.9 + Math.random() * 0.2)); // +/- 10% randomness
+                const timeLimit = Math.ceil(distance / 60) + 1; // Hours, based on avg speed of 60km/h
+                
+                jobs.push({
+                    id: 'job_' + Date.now() + '_' + i,
+                    from: fromCity,
+                    to: toCity,
+                    cargo: cargo.type,
+                    weight: weight,
+                    distance: Math.round(distance),
+                    payment: payment,
+                    timeLimit: timeLimit * 3600, // Convert to seconds
+                    deadline: Date.now() + (timeLimit * 3600 * 1000) // Milliseconds
+                });
+            }
+            return jobs;
+        }
+        
+        // Save/Load Game Functions
+        function saveGameState() {
+            localStorage.setItem('euroTruckManager', JSON.stringify({
+                ...gameState,
+                lastTimestamp: Date.now()
+            }));
+        }
+        
+        function loadGameState() {
+            const savedState = localStorage.getItem('euroTruckManager');
+            if (savedState) {
+                try {
+                    const parsedState = JSON.parse(savedState);
+                    
+                    // Check for version compatibility
+                    if (!parsedState.version) {
+                        parsedState.version = "1.0"; // Set default version for older saves
+                    }
+                    
+                    // Add skillProgress to drivers for older versions that don't have it
+                    if (parsedState.version === "1.0") {
+                        parsedState.drivers.forEach(driver => {
+                            if (!driver.hasOwnProperty('skillProgress')) {
+                                driver.skillProgress = 0;
+                            }
+                        });
+                        parsedState.version = "1.1";
+                    }
+                    
+                    // Update to version 1.2 with maintenance system
+                    if (parsedState.version === "1.1") {
+                        if (!parsedState.hasOwnProperty('maintenanceLevel')) {
+                            parsedState.maintenanceLevel = "Basic";
+                        }
+                        parsedState.version = "1.2";
+                    }
+                    
+                    // Update to version 1.3 with mechanics count
+                    if (parsedState.version === "1.2") {
+                        if (!parsedState.hasOwnProperty('mechanicsCount')) {
+                            parsedState.mechanicsCount = 2;
+                        }
+                        parsedState.version = "1.3";
+                    }
+                    
+                    gameState = parsedState;
+                    updateGameDisplay();
+                } catch (e) {
+                    console.error("Error loading saved game:", e);
+                    showNotification("Error loading saved game", "error");
+                    // Generate new game state with initial jobs
+                    gameState.jobs = generateRandomJobs(8);
+                    saveGameState();
+                }
+            } else {
+                // New game - generate initial jobs
+                gameState.jobs = generateRandomJobs(8);
+                saveGameState();
+            }
+        }
+        
+        // Base64 encoding/decoding functions for save data export/import
+        function exportGameSave() {
+            const saveData = JSON.stringify({
+                ...gameState,
+                lastTimestamp: Date.now()
+            });
+            
+            return btoa(encodeURIComponent(saveData));
+        }
+        
+        function importGameSave(saveData) {
+            try {
+                const decodedData = decodeURIComponent(atob(saveData));
+                const parsedData = JSON.parse(decodedData);
+                
+                // Verify this is valid game save data
+                if (!parsedData.hasOwnProperty('money') || 
+                    !parsedData.hasOwnProperty('trucks') || 
+                    !parsedData.hasOwnProperty('drivers')) {
+                    throw new Error("Invalid save data format");
+                }
+                
+                // Check for version compatibility and update if needed
+                if (!parsedData.version) {
+                    parsedData.version = "1.0";
+                }
+                
+                // Add skillProgress to drivers for older versions that don't have it
+                if (parsedData.version === "1.0") {
+                    parsedData.drivers.forEach(driver => {
+                        if (!driver.hasOwnProperty('skillProgress')) {
+                            driver.skillProgress = 0;
+                        }
+                    });
+                    parsedData.version = "1.1";
+                }
+                
+                // Update to version 1.2 with maintenance system
+                if (parsedData.version === "1.1") {
+                    if (!parsedData.hasOwnProperty('maintenanceLevel')) {
+                        parsedData.maintenanceLevel = "Basic";
+                    }
+                    parsedData.version = "1.2";
+                }
+                
+                // Update to version 1.3 with mechanics count
+                if (parsedData.version === "1.2") {
+                    if (!parsedData.hasOwnProperty('mechanicsCount')) {
+                        parsedData.mechanicsCount = 2;
+                    }
+                    parsedData.version = "1.3";
+                }
+                
+                // Update game state
+                gameState = parsedData;
+                gameState.lastTimestamp = Date.now();
+                
+                // Save and update display
+                saveGameState();
+                updateGameDisplay();
+                
+                return true;
+            } catch (e) {
+                console.error("Error importing save:", e);
+                return false;
+            }
+        }
+	// Function to update fuel prices periodically
+function updateFuelPrices() {
+    // Base fluctuation - small random changes: +/- 3-5%
+    const fluctuationPercent = (Math.random() * 0.06) - 0.03; // -3% to +3%
+    
+    // Current price as base
+    let newPrice = gameState.fuelPrice * (1 + fluctuationPercent);
+    
+    // Occasional larger swings (10% chance of +/- 7-12%)
+    if (Math.random() < 0.1) {
+        const swingDirection = Math.random() > 0.5 ? 1 : -1;
+        const swingMagnitude = 0.07 + (Math.random() * 0.05);
+        newPrice *= (1 + (swingDirection * swingMagnitude));
+    }
+    
+    // Ensure price stays within reasonable bounds (€1.20 - €2.20)
+    newPrice = Math.max(1.20, Math.min(2.20, newPrice));
+    
+    // Round to 2 decimal places
+    gameState.fuelPrice = Math.round(newPrice * 100) / 100;
+    
+    // Update display
+    document.getElementById('fuel-price-display').textContent = `€${gameState.fuelPrice.toFixed(2)}/L`;
+    
+    // If price jumped significantly, show a notification
+    if (Math.abs(fluctuationPercent) > 0.025) {
+        const direction = fluctuationPercent > 0 ? "increased" : "decreased";
+        showNotification(`Fuel prices have ${direction} to €${gameState.fuelPrice.toFixed(2)}/L!`, 'info');
+    }
+    
+    // Save state
+    saveGameState();
+}
+        
+        function updateGameState() {
+            const now = Date.now();
+            const timePassed = (now - gameState.lastTimestamp) / 1000; // in seconds
+            
+            // Update active jobs progress
+            gameState.activeJobs.forEach(job => {
+                if (job.status === 'in_progress') {
+                    job.elapsedTime += timePassed;
+                    
+                    // Check if job is complete
+                    if (job.elapsedTime >= job.totalTime) {
+                        completeJob(job);
+                    }
+                }
+            });
+            
+            // Check trucks in maintenance
+            gameState.trucks.forEach(truck => {
+                if (truck.status === 'maintenance' && truck.maintenanceCompleteTime && now >= truck.maintenanceCompleteTime) {
+                    completeMaintenance(truck);
+                }
+            });
+            
+            // Record current timestamp
+            gameState.lastTimestamp = now;
+            
+            // Save updated state
+            saveGameState();
+            
+            // Update UI
+            updateGameDisplay();
+        }
+        
+        function completeMaintenance(truck) {
+            // Restore truck condition
+            truck.condition = 100;
+            truck.status = 'available';
+            
+            // Clear maintenance data
+            delete truck.maintenanceCompleteTime;
+            delete truck.repairCost;
+            
+            showNotification(`${truck.brand} ${truck.model} maintenance is complete. Condition: 100%`, 'success');
+            
+            saveGameState();
+            updateGameDisplay();
+        }
+        
+        function completeJob(job) {
+            // Check for accident risk
+            const driver = gameState.drivers.find(d => d.id === job.assignedDriverId);
+            if (driver && driver.fatigue >= 70) {
+                const accidentChance = Math.random();
+                let fatigueThreshold = 0;
+
+                if (driver.fatigue >= 90) fatigueThreshold = 0.3;
+                else if (driver.fatigue >= 80) fatigueThreshold = 0.25;
+                else if (driver.fatigue >= 70) fatigueThreshold = 0.2;
+
+                if (accidentChance < fatigueThreshold) {
+                    // Accident occurs
+                    const repairCost = 5000;
+                    const paymentReduction = job.payment * 0.5;
+                    const reputationLoss = 5;
+
+                    gameState.money -= repairCost;
+                    job.payment -= paymentReduction;
+                    gameState.reputation = Math.max(0, gameState.reputation - reputationLoss);
+
+                    showNotification(
+                        `${driver.name} had an accident! Repair cost: €${repairCost}. Payment reduced by €${paymentReduction}. Reputation lost: ${reputationLoss}.`,
+                        'error'
+                    );
+                }
+            }
+
+            // Mark job as completed
+            job.status = 'completed';
+
+            // Pay driver commission based on their skill and experience
+            let driverPayment = 0;
+            if (driver) {
+                const commissionPercentage = calculateDriverCommission(driver);
+                driverPayment = Math.round(job.payment * (commissionPercentage / 100));
+                
+                // Deduct driver payment from job payment
+                const companyPayment = job.payment - driverPayment;
+                
+                // Calculate fuel costs
+const truck = gameState.trucks.find(t => t.id === job.assignedTruckId);
+let fuelCost = 0;
+if (truck) {
+    fuelCost = calculateFuelCost(job.distance, truck.fuelEfficiency, gameState.fuelPrice);
+}
+
+// Add company's share to balance, minus fuel costs
+const netCompanyPayment = companyPayment - fuelCost;
+gameState.money += netCompanyPayment;
+
+// Show fuel cost info if significant
+if (fuelCost > 0) {
+    showNotification(`Fuel cost for the trip: ${formatMoney(fuelCost)}`, 'info');
+}
+                
+                // Keep track of driver earnings
+                driver.totalEarnings = (driver.totalEarnings || 0) + driverPayment;
+                
+                // Show notification about payment
+                showNotification(`${driver.name} earned ${formatMoney(driverPayment)} (${commissionPercentage.toFixed(1)}% commission) for the job.`, 'info');
+            } else {
+                // If no driver assigned (shouldn't happen), add full payment
+                gameState.money += job.payment;
+            }
+
+            // Increase reputation
+            gameState.reputation += Math.ceil(job.payment / 1000); 
+
+            // Free up driver and truck
+            if (driver) {
+                driver.status = 'available';
+                // Experience reduces fatigue gain (1-25% reduction based on experience)
+                const fatigueReduction = Math.min(0.25, driver.experience * 0.05);
+                const baseFatigue = Math.min(30, Math.floor(job.totalTime / 3600) * 10);
+                driver.fatigue += Math.round(baseFatigue * (1 - fatigueReduction));
+
+                // Increment driver stats
+                driver.jobsCompleted = (driver.jobsCompleted || 0) + 1;
+                driver.totalDistance = (driver.totalDistance || 0) + job.distance;
+
+                // Add skill progress based on job distance and complexity
+                const jobComplexity = job.weight / 20; // 0.25 to 1.0 based on weight
+                const distanceFactor = job.distance / 500; // normalize distance
+                // Experience increases learning rate (1-30% bonus based on experience)
+                const experienceBonus = 1 + Math.min(0.3, driver.experience * 0.06);
+                const skillGain = Math.min(30, Math.round((10 + (distanceFactor * 10) + (jobComplexity * 5)) * experienceBonus));
+
+                // Add skill progress
+                driver.skillProgress = (driver.skillProgress || 0) + skillGain;
+
+                // Level up if ready and not maxed out
+                if (driver.skillProgress >= 100 && driver.skill < 10) {
+                    driver.skill += 1;
+                    driver.skillProgress = 0;
+                    showNotification(`${driver.name} has leveled up! Skill is now ${driver.skill}/10`, 'success');
+                }
+            }
+
+            const truck = gameState.trucks.find(t => t.id === job.assignedTruckId);
+            if (truck) {
+                // Decrease condition based on distance
+                const conditionLoss = (job.distance / 1000) * (1 - truck.reliability);
+                truck.condition -= conditionLoss;
+                
+                // Check if truck needs immediate maintenance
+                if (truck.condition <= 0) {
+                    truck.condition = 0;
+                    truck.status = 'maintenance';
+                    const repairTime = getMaintenanceTime(100);
+                    truck.maintenanceCompleteTime = Date.now() + repairTime;
+                    truck.repairCost = calculateRepairCost(truck, 100); // Full repair needed
+                    
+                    // Pay repair cost automatically
+                    gameState.money -= truck.repairCost;
+                    
+                    showNotification(`${truck.brand} ${truck.model} has broken down and needs repairs! Cost: ${formatMoney(truck.repairCost)}`, 'error');
+                } 
+                // Check if truck needs maintenance after this job
+                else if (truck.condition < 20) {
+                    truck.status = 'maintenance';
+                    const conditionToRepair = 100 - truck.condition;
+                    const repairTime = getMaintenanceTime(conditionToRepair);
+                    truck.maintenanceCompleteTime = Date.now() + repairTime;
+                    truck.repairCost = calculateRepairCost(truck, conditionToRepair);
+                    
+                    // Pay repair cost automatically
+                    gameState.money -= truck.repairCost;
+                    
+                    showNotification(`${truck.brand} ${truck.model} needs maintenance after this job. Cost: ${formatMoney(truck.repairCost)}`, 'warning');
+                }
+                // Risk of breakdown during job based on condition
+                else if (truck.condition < 30 && Math.random() < (0.3 - truck.condition / 100)) {
+                    // Partial breakdown during job
+                    const breakdownRepairCost = calculateRepairCost(truck, 30);
+                    const delayFactor = 0.2; // 20% delay
+                    job.totalTime *= (1 + delayFactor);
+                    
+                    gameState.money -= breakdownRepairCost;
+                    gameState.reputation = Math.max(0, gameState.reputation - 2);
+                    
+                    showNotification(
+                        `${truck.brand} ${truck.model} had issues during delivery. Emergency repair cost: ${formatMoney(breakdownRepairCost)}. Delivery delayed.`,
+                        'warning'
+                    );
+                    
+                    truck.condition += 15; // Emergency repair boosts condition slightly
+                    truck.status = 'available';
+                }
+                else {
+                    truck.status = 'available';
+                }
+            }
+
+            // Show notification
+            showNotification(`Job completed: ${job.from.name} to ${job.to.name}. Payment: ${formatMoney(job.payment)}`, 'success');
+
+            // Save state
+            saveGameState();
+
+            // Update UI
+            updateGameDisplay();
+        }
+        
+        function updateGameDisplay() {
+            // Update header stats
+            document.getElementById('money-display').textContent = formatMoney(gameState.money);
+            document.getElementById('reputation-display').textContent = gameState.reputation;
+            document.getElementById('fuel-price-display').textContent = `€${gameState.fuelPrice.toFixed(2)}/L`;
+            document.getElementById('region-display').textContent = gameState.region;
+            
+            // Update quick stats
+            document.getElementById('trucks-count').textContent = gameState.trucks.length;
+            document.getElementById('drivers-count').textContent = gameState.drivers.length;
+            document.getElementById('active-jobs-count').textContent = gameState.activeJobs.filter(j => j.status === 'in_progress').length;
+            document.getElementById('available-jobs-count').textContent = gameState.jobs.length;
+            
+            // Update garage capacity
+            document.getElementById('garage-capacity').textContent = `${gameState.trucks.length} / ${gameState.garageCapacity} trucks`;
+            
+            // Update maintenance level
+            document.getElementById('maintenance-level').textContent = gameState.maintenanceLevel;
+            
+            // Update mechanics count
+            document.getElementById('mechanics-count').textContent = `${gameState.mechanicsCount} mechanics`;
+            
+            // Update active jobs on dashboard
+            updateActiveJobsDisplay();
+            
+            // Update fleet summary on dashboard
+            updateFleetSummary();
+            
+            // Update maintenance summary
+            updateMaintenanceSummary();
+            
+            // Update trucks list
+            updateTrucksList();
+            
+            // Update drivers list
+            updateDriversList();
+            
+            // Update jobs list
+            updateJobsList();
+            
+            // Update garage trucks
+            updateGarageTrucks();
+            
+            // Update maintenance bay
+            updateMaintenanceBay();
+            
+            // Update upgrade buttons state
+            updateUpgradeButtons();
+            
+            // Update mechanics upgrade visibility
+            updateMechanicsUpgrades();
+        }
+        
+        function updateUpgradeButtons() {
+            const capacityBtn = document.getElementById('upgrade-capacity');
+            const maintenanceBtn = document.getElementById('upgrade-maintenance');
+            
+            // Check if garage is already at max capacity
+            if (gameState.garageCapacity >= 5) {
+                capacityBtn.disabled = true;
+                capacityBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                capacityBtn.textContent = 'Upgraded';
+            } else {
+                capacityBtn.disabled = gameState.money < 25000;
+                if (gameState.money < 25000) {
+                    capacityBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    capacityBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+            
+            // Check if maintenance is already advanced
+            if (gameState.maintenanceLevel === "Advanced") {
+                maintenanceBtn.disabled = true;
+                maintenanceBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                maintenanceBtn.textContent = 'Upgraded';
+            } else {
+                maintenanceBtn.disabled = gameState.money < 35000;
+                if (gameState.money < 35000) {
+                    maintenanceBtn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    maintenanceBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+        
+        function updateMechanicsUpgrades() {
+            // Get mechanic upgrade elements
+            const mechanic3Upgrade = document.getElementById('mechanic3-upgrade');
+            const mechanic4Upgrade = document.getElementById('mechanic4-upgrade');
+            const mechanic5Upgrade = document.getElementById('mechanic5-upgrade');
+            
+            const hireMechanic3Btn = document.getElementById('hire-mechanic-3');
+            const hireMechanic4Btn = document.getElementById('hire-mechanic-4');
+            const hireMechanic5Btn = document.getElementById('hire-mechanic-5');
+            
+            // Check mechanic count and update visibility/state of upgrade options
+            if (gameState.mechanicsCount >= 3) {
+                // Hide or disable the 3rd mechanic upgrade option
+                hireMechanic3Btn.disabled = true;
+                hireMechanic3Btn.classList.add('opacity-50', 'cursor-not-allowed');
+                hireMechanic3Btn.textContent = 'Hired';
+                
+                // Show the 4th mechanic upgrade option
+                mechanic4Upgrade.classList.remove('hidden');
+                
+                // Check if 4th mechanic is hired
+                if (gameState.mechanicsCount >= 4) {
+                    hireMechanic4Btn.disabled = true;
+                    hireMechanic4Btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    hireMechanic4Btn.textContent = 'Hired';
+                    
+                    // Show the 5th mechanic upgrade option
+                    mechanic5Upgrade.classList.remove('hidden');
+                    
+                    // Check if 5th mechanic is hired
+                    if (gameState.mechanicsCount >= 5) {
+                        hireMechanic5Btn.disabled = true;
+                        hireMechanic5Btn.classList.add('opacity-50', 'cursor-not-allowed');
+                        hireMechanic5Btn.textContent = 'Hired';
+                    } else {
+                        // Enable/disable based on available funds
+                        hireMechanic5Btn.disabled = gameState.money < 45000;
+                        if (gameState.money < 45000) {
+                            hireMechanic5Btn.classList.add('opacity-50', 'cursor-not-allowed');
+                        } else {
+                            hireMechanic5Btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        }
+                    }
+                } else {
+                    // Enable/disable based on available funds
+                    hireMechanic4Btn.disabled = gameState.money < 30000;
+                    if (gameState.money < 30000) {
+                        hireMechanic4Btn.classList.add('opacity-50', 'cursor-not-allowed');
+                    } else {
+                        hireMechanic4Btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    }
+                }
+            } else {
+                // Enable/disable based on available funds
+                hireMechanic3Btn.disabled = gameState.money < 20000;
+                if (gameState.money < 20000) {
+                    hireMechanic3Btn.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    hireMechanic3Btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+        }
+        
+        function updateMaintenanceSummary() {
+            const container = document.getElementById('maintenance-summary');
+            container.innerHTML = '';
+            
+            const maintenanceTrucks = gameState.trucks.filter(t => t.status === 'maintenance');
+            
+            if (maintenanceTrucks.length === 0) {
+                container.innerHTML = '<div class="text-gray-500 dark:text-gray-400 italic">No trucks in maintenance</div>';
+                return;
+            }
+            
+            maintenanceTrucks.forEach(truck => {
+                const timeLeft = truck.maintenanceCompleteTime - Date.now();
+                const percentComplete = 100 - (timeLeft / (getMaintenanceTime(100 - truck.condition)) * 100);
+                
+                const truckElement = document.createElement('div');
+                truckElement.className = 'bg-gray-100 dark:bg-gray-700 p-2 rounded mb-2';
+                truckElement.innerHTML = `
+                    <div class="flex justify-between mb-1">
+                        <div class="font-medium">${truck.brand} ${truck.model}</div>
+                        <div>${formatMoney(truck.repairCost)}</div>
+                    </div>
+                    <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2 overflow-hidden">
+                        <div class="maintenance-progress-bar from-yellow-400 to-yellow-600 h-2 rounded-full" 
+                             style="width: ${percentComplete}%"></div>
+                    </div>
+                    <div class="flex justify-between mt-1 text-xs text-gray-500 dark:text-gray-400">
+                        <div>Repairing damage</div>
+                        <div>Complete in: ${formatTime(timeLeft / 1000)}</div>
+                    </div>
+                `;
+                container.appendChild(truckElement);
+            });
+        }
+        
+        function updateMaintenanceBay() {
+            const container = document.getElementById('maintenance-bay');
+            container.innerHTML = '';
+            
+            const maintenanceTrucks = gameState.trucks.filter(t => t.status === 'maintenance');
+            
+            if (maintenanceTrucks.length === 0) {
+                container.innerHTML = '<div class="text-gray-500 dark:text-gray-400 italic">No trucks in maintenance</div>';
+                return;
+            }
+            
+            maintenanceTrucks.forEach(truck => {
+                const timeLeft = truck.maintenanceCompleteTime - Date.now();
+                const percentComplete = 100 - (timeLeft / (getMaintenanceTime(100 - truck.condition)) * 100);
+                
+                const truckElement = document.createElement('div');
+                truckElement.className = 'bg-white dark:bg-gray-800 p-2 rounded-sm flex flex-col';
+                truckElement.innerHTML = `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center">
+                            <div class="mr-2 text-xl">${truck.image}</div>
+                            <div>${truck.brand} ${truck.model}</div>
+                        </div>
+                        <div class="text-xs">${formatMoney(truck.repairCost)}</div>
+                    </div>
+                    <div class="mt-1 w-full bg-gray-300 dark:bg-gray-600 rounded-full h-1.5 overflow-hidden">
+                        <div class="maintenance-progress-bar from-yellow-400 to-yellow-600 h-1.5" 
+                             style="width: ${percentComplete}%"></div>
+                    </div>
+                    <div class="mt-1 text-xs text-gray-500 dark:text-gray-400 text-right">
+                        ${formatTime(timeLeft / 1000)} remaining
+                    </div>
+                `;
+                container.appendChild(truckElement);
+            });
+        }
+        
+        function updateActiveJobsDisplay() {
+            const container = document.getElementById('active-jobs-container');
+            container.innerHTML = '';
+            
+            const activeJobs = gameState.activeJobs.filter(job => job.status === 'in_progress');
+            
+            if (activeJobs.length === 0) {
+                container.innerHTML = '<div class="text-sm text-gray-500 dark:text-gray-400 italic">No active deliveries</div>';
+                return;
+            }
+            
+            activeJobs.forEach(job => {
+                const progress = (job.elapsedTime / job.totalTime) * 100;
+                const timeLeft = job.totalTime - job.elapsedTime;
+                
+                const jobElement = document.createElement('div');
+                jobElement.className = 'bg-gray-100 dark:bg-gray-700 p-2 rounded text-xs';
+                jobElement.innerHTML = `
+                    <div class="flex justify-between mb-1">
+                        <div><span class="font-medium">${job.from.name} → ${job.to.name}</span> (${job.cargo})</div>
+                        <div>${formatMoney(job.payment)}</div>
+                    </div>
+                    <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2">
+                        <div class="bg-primary dark:bg-blue-500 h-2 rounded-full" style="width: ${progress}%"></div>
+                    </div>
+                    <div class="flex justify-between mt-1 text-gray-500 dark:text-gray-400">
+                        <div>Driver: ${job.driverName}</div>
+                        <div>ETA: ${formatTime(timeLeft)}</div>
+                    </div>
+                `;
+                container.appendChild(jobElement);
+            });
+        }
+        
+        function updateFleetSummary() {
+            const container = document.getElementById('fleet-summary');
+            container.innerHTML = '';
+            
+            if (gameState.trucks.length === 0) {
+                container.innerHTML = '<div class="text-gray-500 dark:text-gray-400 italic">No trucks owned</div>';
+                return;
+            }
+            
+            const availableTrucks = gameState.trucks.filter(t => t.status === 'available').length;
+            const inJobTrucks = gameState.trucks.filter(t => t.status === 'in_job').length;
+            const maintenanceTrucks = gameState.trucks.filter(t => t.status === 'maintenance').length;
+            
+            const summaryHtml = `
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Available</div>
+                        <div class="font-medium">${availableTrucks} trucks</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">In Delivery</div>
+                        <div class="font-medium">${inJobTrucks} trucks</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Maintenance</div>
+                        <div class="font-medium">${maintenanceTrucks} trucks</div>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = summaryHtml;
+        }
+        
+        function updateTrucksList() {
+            const container = document.getElementById('trucks-list');
+            container.innerHTML = '';
+            
+            if (gameState.trucks.length === 0) {
+                container.innerHTML = '<div class="text-sm text-gray-500 dark:text-gray-400 italic">No trucks owned</div>';
+                return;
+            }
+            
+            gameState.trucks.forEach(truck => {
+                // Add warning class for trucks with low condition
+                let conditionClass = '';
+                if (truck.status !== 'maintenance') {
+                    if (truck.condition < 20) {
+                        conditionClass = 'text-danger font-bold';
+                    } else if (truck.condition < 40) {
+                        conditionClass = 'text-warning font-bold';
+                    }
+                }
+                
+                const truckElement = document.createElement('div');
+                truckElement.className = 'bg-gray-100 dark:bg-gray-700 p-2 rounded flex items-center justify-between';
+                truckElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="mr-2 text-2xl">${truck.image}</div>
+                        <div>
+                            <div class="font-medium">${truck.brand} ${truck.model}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                Status: <span class="${getStatusColorClass(truck.status)}">${formatStatus(truck.status)}</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <div class="text-xs ${conditionClass}">Condition: ${Math.round(truck.condition)}%</div>
+                        <button class="mt-1 text-xs px-2 py-1 bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded truck-details-btn" data-truck-id="${truck.id}">Details</button>
+                    </div>
+                `;
+                container.appendChild(truckElement);
+            });
+            
+            // Add event listeners for truck details buttons
+            document.querySelectorAll('.truck-details-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    const truckId = e.target.getAttribute('data-truck-id');
+                    showTruckDetails(truckId);
+                });
+            });
+        }
+        
+        function updateDriversList() {
+            const container = document.getElementById('drivers-list');
+            container.innerHTML = '';
+            
+            if (gameState.drivers.length === 0) {
+                container.innerHTML = '<div class="text-sm text-gray-500 dark:text-gray-400 italic">No drivers hired</div>';
+                return;
+            }
+            
+            gameState.drivers.forEach(driver => {
+                const commissionPercentage = calculateDriverCommission(driver);
+                
+                const driverElement = document.createElement('div');
+                driverElement.className = 'bg-gray-100 dark:bg-gray-700 p-2 rounded flex items-center justify-between';
+                driverElement.innerHTML = `
+                    <div>
+                        <div class="font-medium">${driver.name}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">
+                            Status: <span class="${getStatusColorClass(driver.status)}">${formatStatus(driver.status)}</span>
+                        </div>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <div class="text-xs">Skill: ${driver.skill}/10</div>
+                        <button class="mt-1 text-xs px-2 py-1 bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded driver-details-btn" data-driver-id="${driver.id}">Details</button>
+                    </div>
+                `;
+                container.appendChild(driverElement);
+            });
+            
+            // Add event listeners for driver details buttons
+            document.querySelectorAll('.driver-details-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    const driverId = e.target.getAttribute('data-driver-id');
+                    showDriverDetails(driverId);
+                });
+            });
+        }
+        
+        function updateJobsList() {
+            const container = document.getElementById('available-jobs');
+            container.innerHTML = '';
+            
+            if (gameState.jobs.length === 0) {
+                container.innerHTML = '<div class="text-sm text-gray-500 dark:text-gray-400 italic">No jobs available. Check back soon!</div>';
+                return;
+            }
+            
+            gameState.jobs.forEach(job => {
+                const jobElement = document.createElement('div');
+                jobElement.className = 'bg-gray-100 dark:bg-gray-700 p-2 rounded flex items-center justify-between';
+                jobElement.innerHTML = `
+                    <div>
+                        <div class="font-medium">${job.from.name} → ${job.to.name}</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400">${job.cargo}, ${job.weight} tons, ${job.distance} km</div>
+                    </div>
+                    <div class="flex flex-col items-end">
+                        <div class="font-medium">${formatMoney(job.payment)}</div>
+                        <button class="mt-1 text-xs px-2 py-1 bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700 text-white rounded job-details-btn" data-job-id="${job.id}">Details</button>
+                    </div>
+                `;
+                container.appendChild(jobElement);
+            });
+            
+            // Add event listeners for job details buttons
+            document.querySelectorAll('.job-details-btn').forEach(btn => {
+                btn.addEventListener('click', e => {
+                    const jobId = e.target.getAttribute('data-job-id');
+                    showJobDetails(jobId);
+                });
+            });
+        }
+        
+        function updateGarageTrucks() {
+            const container = document.getElementById('garage-trucks');
+            container.innerHTML = '';
+            
+            const availableTrucks = gameState.trucks.filter(t => t.status === 'available');
+            
+            if (availableTrucks.length === 0) {
+                container.innerHTML = '<div class="text-gray-500 dark:text-gray-400 italic">No trucks in garage</div>';
+                return;
+            }
+            
+            availableTrucks.forEach(truck => {
+                // Add warning class for trucks with low condition
+                let conditionClass = '';
+                if (truck.condition < 20) {
+                    conditionClass = 'text-danger font-bold';
+                } else if (truck.condition < 40) {
+                    conditionClass = 'text-warning font-bold';
+                }
+                
+                const truckElement = document.createElement('div');
+                truckElement.className = 'bg-white dark:bg-gray-800 p-2 rounded-sm flex justify-between items-center';
+                truckElement.innerHTML = `
+                    <div class="flex items-center">
+                        <div class="mr-2 text-xl">${truck.image}</div>
+                        <div>${truck.brand} ${truck.model}</div>
+                    </div>
+                    <div class="${conditionClass}">Condition: ${Math.round(truck.condition)}%</div>
+                `;
+                container.appendChild(truckElement);
+            });
+        }
+        
+        function getStatusColorClass(status) {
+            switch (status) {
+                case 'available':
+                    return 'text-success';
+                case 'in_job':
+                case 'in_progress':
+                    return 'text-warning';
+                case 'maintenance':
+                    return 'text-danger';
+                default:
+                    return '';
+            }
+        }
+        
+        function formatStatus(status) {
+            switch (status) {
+                case 'available':
+                    return 'Available';
+                case 'in_job':
+                    return 'On Delivery';
+                case 'in_progress':
+                    return 'In Progress';
+                case 'maintenance':
+                    return 'Maintenance';
+                case 'completed':
+                    return 'Completed';
+                default:
+                    return status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ');
+            }
+        }
+        
+        function showTruckDetails(truckId) {
+            const truck = gameState.trucks.find(t => t.id === truckId);
+            if (!truck) return;
+            
+            const modal = document.getElementById('truck-detail-modal');
+            const title = document.getElementById('truck-detail-title');
+            const content = document.getElementById('truck-detail-content');
+            const sellButton = document.getElementById('sell-truck-btn');
+            const repairButton = document.getElementById('repair-truck-btn');
+            
+            title.textContent = `${truck.brand} ${truck.model}`;
+            
+            // Determine condition class
+            let conditionClass = '';
+            if (truck.status !== 'maintenance') {
+                if (truck.condition < 20) {
+                    conditionClass = 'text-danger';
+                } else if (truck.condition < 40) {
+                    conditionClass = 'text-warning';
+                }
+            }
+            
+            content.innerHTML = `
+                <div class="flex justify-center mb-4">
+                    <div class="text-5xl">${truck.image}</div>
+                </div>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Purchase Value</div>
+                        <div class="font-medium">${formatMoney(truck.price)}</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Current Value</div>
+                        <div class="font-medium">${formatMoney(Math.round(truck.price * (truck.condition / 100) * 0.8))}</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Status</div>
+                        <div class="font-medium ${getStatusColorClass(truck.status)}">${formatStatus(truck.status)}</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Condition</div>
+                        <div class="font-medium ${conditionClass}">${Math.round(truck.condition)}%</div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs font-medium mb-1">Specifications</div>
+                    <div class="grid grid-cols-2 gap-y-1 text-xs">
+                        <div>Cargo Capacity:</div>
+                        <div>${truck.capacity} tons</div>
+                        <div>Fuel Efficiency:</div>
+                        <div>${truck.fuelEfficiency.toFixed(2)} L/km</div>
+                        <div>Speed:</div>
+                        <div>${truck.speed} km/h</div>
+                        <div>Maintenance Cost:</div>
+                        <div>${truck.maintenance.toFixed(2)} €/km</div>
+                        <div>Reliability:</div>
+                        <div>${(truck.reliability * 100).toFixed(0)}%</div>
+                    </div>
+                </div>
+            `;
+            
+            // Add maintenance section if in maintenance
+            if (truck.status === 'maintenance') {
+                const timeLeft = truck.maintenanceCompleteTime - Date.now();
+                const percentComplete = 100 - (timeLeft / (getMaintenanceTime(100 - truck.condition)) * 100);
+                
+                const maintenanceSection = document.createElement('div');
+                maintenanceSection.className = 'mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded';
+                maintenanceSection.innerHTML = `
+                    <div class="text-xs font-medium mb-1">Maintenance Status</div>
+                    <div class="text-xs mb-2">Repairing truck to 100% condition</div>
+                    <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2 overflow-hidden">
+                        <div class="maintenance-progress-bar from-yellow-400 to-yellow-600 h-2 rounded-full" 
+                             style="width: ${percentComplete}%"></div>
+                    </div>
+                    <div class="flex justify-between mt-1 text-xs">
+                        <div>Cost: ${formatMoney(truck.repairCost)}</div>
+                        <div>Remaining time: ${formatTime(timeLeft / 1000)}</div>
+                    </div>
+                `;
+                content.appendChild(maintenanceSection);
+            } 
+            // Add job details if truck is on a job
+            else if (truck.status === 'in_job') {
+                const job = gameState.activeJobs.find(j => j.assignedTruckId === truck.id && j.status === 'in_progress');
+                if (job) {
+                    const jobSection = document.createElement('div');
+                    jobSection.className = 'mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded';
+                    jobSection.innerHTML = `
+                        <div class="text-xs font-medium mb-1">Current Job</div>
+                    `;
+                    
+                    const jobDetails = document.createElement('div');
+                    jobDetails.className = 'text-xs';
+                    
+                    const progress = (job.elapsedTime / job.totalTime) * 100;
+                    const timeLeft = job.totalTime - job.elapsedTime;
+                    
+                    jobDetails.innerHTML = `
+                        <div class="mb-1">${job.from.name} → ${job.to.name} (${job.cargo})</div>
+                        <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2">
+                            <div class="bg-primary dark:bg-blue-500 h-2 rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="flex justify-between mt-1 text-gray-500 dark:text-gray-400">
+                            <div>Driver: ${job.driverName}</div>
+                            <div>ETA: ${formatTime(timeLeft)}</div>
+                        </div>
+                    `;
+                    
+                    jobSection.appendChild(jobDetails);
+                    content.appendChild(jobSection);
+                }
+            }
+            // Add manual repair option if available
+            else if (truck.condition < 80) {
+                const repairCost = calculateRepairCost(truck, 100 - truck.condition);
+                const repairSection = document.createElement('div');
+                repairSection.className = 'mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded';
+                repairSection.innerHTML = `
+                    <div class="text-xs font-medium mb-1">Maintenance Required</div>
+                    <div class="text-xs mb-1">
+                        ${truck.condition < 30 
+                            ? '<span class="text-danger font-medium">Warning: Low condition increases risk of breakdown during jobs.</span>' 
+                            : 'Consider maintenance to improve condition.'}
+                    </div>
+                    <div class="flex justify-between text-xs">
+                        <div>Repair to 100%:</div>
+                        <div>${formatMoney(repairCost)}</div>
+                    </div>
+                    <div class="text-xs mt-1">
+                        ${(getMaintenanceTime(100 - truck.condition) / (60 * 1000)).toFixed(1)} minutes repair time
+                    </div>
+                `;
+                content.appendChild(repairSection);
+                
+                // Show repair button
+                repairButton.classList.remove('hidden');
+                repairButton.setAttribute('data-truck-id', truck.id);
+                repairButton.setAttribute('data-repair-cost', repairCost);
+                
+                // Disable repair button if can't afford
+                if (gameState.money < repairCost) {
+                    repairButton.disabled = true;
+                    repairButton.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    repairButton.disabled = false;
+                    repairButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            } else {
+                // Hide repair button for trucks in good condition
+                repairButton.classList.add('hidden');
+            }
+            
+            // Configure sell button
+            sellButton.setAttribute('data-truck-id', truck.id);
+            sellButton.disabled = truck.status === 'in_job' || truck.status === 'maintenance';
+            if (truck.status === 'in_job' || truck.status === 'maintenance') {
+                sellButton.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                sellButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            
+            // Show modal
+            modal.classList.remove('hidden');
+        }
+        
+        function showDriverDetails(driverId) {
+            const driver = gameState.drivers.find(d => d.id === driverId);
+            if (!driver) return;
+            
+            const modal = document.getElementById('driver-detail-modal');
+            const title = document.getElementById('driver-detail-title');
+            const content = document.getElementById('driver-detail-content');
+            const fireButton = document.getElementById('fire-driver-btn');
+            
+            // Create editable name header
+            title.innerHTML = `
+                <div class="flex items-center">
+                    <span id="driver-name-display">${driver.name}</span>
+                    <button id="edit-driver-name" class="ml-2 p-1 text-xs bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                        </svg>
+                    </button>
+                </div>
+                <div id="name-edit-form" class="hidden mt-2 flex">
+                    <input type="text" id="driver-name-input" class="border dark:border-gray-600 dark:bg-gray-700 rounded px-2 py-1 text-sm flex-1" value="${driver.name}">
+                    <button id="save-driver-name" class="ml-1 px-2 py-1 text-xs bg-success hover:bg-green-600 text-white rounded">Save</button>
+                    <button id="cancel-driver-name" class="ml-1 px-2 py-1 text-xs bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500 rounded">Cancel</button>
+                </div>
+            `;
+            
+            // Calculate skill progress to next level
+            const skillProgress = driver.skillProgress || 0;
+            const nextLevelProgress = driver.skill >= 10 ? 100 : Math.min(100, skillProgress);
+            
+            // Calculate commission percentage
+            const commissionPercentage = calculateDriverCommission(driver);
+            
+            content.innerHTML = `
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Commission</div>
+                        <div class="font-medium">${formatCommissionPercentage(commissionPercentage)} per job</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Status</div>
+                        <div class="font-medium ${getStatusColorClass(driver.status)}">${formatStatus(driver.status)}</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Skill Level</div>
+                        <div class="font-medium flex items-center">
+                            <span>${driver.skill}/10</span>
+                            ${driver.skill < 10 ? `
+                                <div class="ml-2 flex-1 h-2 bg-gray-300 dark:bg-gray-600 rounded-full overflow-hidden">
+                                    <div class="bg-primary h-2 rounded-full" style="width: ${nextLevelProgress}%"></div>
+                                </div>
+                            ` : '<span class="ml-2 text-xs text-success">(Max Level)</span>'}
+                        </div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Experience</div>
+                        <div class="font-medium">${driver.experience} years</div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs font-medium mb-1">Driver Stats</div>
+                    <div class="grid grid-cols-2 gap-y-1 text-xs">
+                        <div>Total Earnings:</div>
+                        <div>${formatMoney(driver.totalEarnings || 0)}</div>
+                        <div>Jobs Completed:</div>
+                        <div>${driver.jobsCompleted || 0}</div>
+                        <div>Total Distance:</div>
+                        <div>${driver.totalDistance || 0} km</div>
+                        <div>Commission Rate:</div>
+                        <div class="text-xs text-success">
+                            ${commissionPercentage.toFixed(1)}% (${formatCommissionPercentage(10 + driver.skill * 0.5)} base + bonus)
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs font-medium mb-1">Driver Status</div>
+                    <div class="grid grid-cols-2 gap-y-1 text-xs">
+                        <div>Fatigue Level:</div>
+                        <div>
+                            <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2 mt-1">
+                                <div class="bg-warning h-2 rounded-full" style="width: ${driver.fatigue}%"></div>
+                            </div>
+                        </div>
+                        <div>Skill & Experience Effects:</div>
+                        <div class="text-xs">
+                            <span class="text-success">+${Math.round((driver.skill * 2))}% Speed</span>,
+                            <span class="text-success">-${Math.min(25, driver.experience * 5)}% Fatigue Gain</span>,
+                            <span class="text-success">+${Math.min(30, driver.experience * 6)}% Learning</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Update job details if driver is on a job
+            if (driver.status === 'in_job') {
+                const job = gameState.activeJobs.find(j => j.assignedDriverId === driver.id && j.status === 'in_progress');
+                if (job) {
+                    const jobSection = document.createElement('div');
+                    jobSection.className = 'mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded';
+                    jobSection.innerHTML = `
+                        <div class="text-xs font-medium mb-1">Current Job</div>
+                    `;
+                    
+                    const jobDetails = document.createElement('div');
+                    jobDetails.className = 'text-xs';
+                    
+                    const progress = (job.elapsedTime / job.totalTime) * 100;
+                    const timeLeft = job.totalTime - job.elapsedTime;
+                    
+                    // Calculate expected earnings
+                    const expectedEarnings = Math.round(job.payment * (commissionPercentage / 100));
+                    
+                    jobDetails.innerHTML = `
+                        <div class="mb-1">${job.from.name} → ${job.to.name} (${job.cargo})</div>
+                        <div class="w-full bg-gray-300 dark:bg-gray-600 rounded-full h-2">
+                            <div class="bg-primary dark:bg-blue-500 h-2 rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                        <div class="flex justify-between mt-1 text-gray-500 dark:text-gray-400">
+                            <div>Expected earnings: ${formatMoney(expectedEarnings)}</div>
+                            <div>ETA: ${formatTime(timeLeft)}</div>
+                        </div>
+                    `;
+                    
+                    jobSection.appendChild(jobDetails);
+                    content.appendChild(jobSection);
+                }
+            }
+            
+            // Configure fire button
+            fireButton.setAttribute('data-driver-id', driver.id);
+            fireButton.disabled = driver.status === 'in_job';
+            if (driver.status === 'in_job') {
+                fireButton.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                fireButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            
+            // Add name edit functionality
+            document.getElementById('edit-driver-name').addEventListener('click', () => {
+                document.getElementById('driver-name-display').parentElement.classList.add('hidden');
+                document.getElementById('name-edit-form').classList.remove('hidden');
+                document.getElementById('driver-name-input').focus();
+            });
+            
+            document.getElementById('save-driver-name').addEventListener('click', () => {
+                const newName = document.getElementById('driver-name-input').value.trim();
+                if (newName) {
+                    driver.name = newName;
+                    document.getElementById('driver-name-display').textContent = newName;
+                    document.getElementById('driver-name-display').parentElement.classList.remove('hidden');
+                    document.getElementById('name-edit-form').classList.add('hidden');
+                    
+                    // Update job references if driver is on a job
+                    const activeJob = gameState.activeJobs.find(j => j.assignedDriverId === driver.id);
+                    if (activeJob) {
+                        activeJob.driverName = newName;
+                    }
+                    
+                    saveGameState();
+                    updateGameDisplay();
+                    showNotification('Driver name updated!', 'success');
+                }
+            });
+            
+            document.getElementById('cancel-driver-name').addEventListener('click', () => {
+                document.getElementById('driver-name-display').parentElement.classList.remove('hidden');
+                document.getElementById('name-edit-form').classList.add('hidden');
+            });
+            
+            // Show modal
+            modal.classList.remove('hidden');
+        }
+        
+        function showJobDetails(jobId) {
+            const job = gameState.jobs.find(j => j.id === jobId);
+            if (!job) return;
+            
+            const modal = document.getElementById('job-detail-modal');
+            const title = document.getElementById('job-detail-title');
+            const content = document.getElementById('job-detail-content');
+            const acceptButton = document.getElementById('accept-job-btn');
+            const driversSection = document.getElementById('available-drivers-for-job');
+            const trucksSection = document.getElementById('available-trucks-for-job');
+            
+            // Update job title and details
+            title.textContent = `${job.from.name} to ${job.to.name}`;
+            content.innerHTML = `
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Cargo</div>
+                        <div class="font-medium">${job.cargo}</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Weight</div>
+                        <div class="font-medium">${job.weight} tons</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Distance</div>
+                        <div class="font-medium">${job.distance} km</div>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                        <div class="text-xs text-gray-500 dark:text-gray-400">Payment</div>
+                        <div class="font-medium">${formatMoney(job.payment)}</div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs font-medium mb-1">Delivery Details</div>
+                    <div class="grid grid-cols-2 gap-y-1 text-xs">
+                        <div>From:</div>
+                        <div>${job.from.name}, ${job.from.country}</div>
+                        <div>To:</div>
+                        <div>${job.to.name}, ${job.to.country}</div>
+                        <div>Time Limit:</div>
+                        <div>${formatTime(job.timeLimit)}</div>
+                        <div>Deadline:</div>
+                        <div>${new Date(job.deadline).toLocaleString()}</div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+                    <div class="text-xs font-medium mb-1">Requirements</div>
+                    <div class="grid grid-cols-2 gap-y-1 text-xs">
+                        <div>Minimum Truck Capacity:</div>
+                        <div>${job.weight} tons</div>
+                    </div>
+                </div>
+		<div class="mt-4 bg-gray-100 dark:bg-gray-700 p-2 rounded">
+    <div class="text-xs font-medium mb-1">Estimated Expenses</div>
+    <div class="grid grid-cols-2 gap-y-1 text-xs">
+        <div>Est. Fuel Cost:</div>
+        <div>${formatMoney(calculateFuelCost(job.distance, 0.35, gameState.fuelPrice))} - ${formatMoney(calculateFuelCost(job.distance, 0.30, gameState.fuelPrice))}</div>
+        <div>Current Fuel Price:</div>
+        <div>€${gameState.fuelPrice.toFixed(2)}/L</div>
+    </div>
+</div>
+            `;
+            
+            // List available drivers
+            const availableDrivers = gameState.drivers.filter(d => d.status === 'available');
+            driversSection.innerHTML = '<div class="text-sm font-semibold mb-1">Select Driver:</div>';
+            
+            if (availableDrivers.length === 0) {
+                driversSection.innerHTML += '<div class="text-xs text-gray-500 dark:text-gray-400 italic">No available drivers. You need to hire a driver.</div>';
+            } else {
+                availableDrivers.forEach(driver => {
+                    // Calculate commission for this job
+                    const commissionPercentage = calculateDriverCommission(driver);
+                    const estimatedEarnings = Math.round(job.payment * (commissionPercentage / 100));
+                    
+                    // Warn about high fatigue
+                    const fatigueWarning = driver.fatigue >= 70 ? 
+                        `<div class="text-danger text-xs">Warning: High fatigue (${driver.fatigue}%)</div>` : '';
+                    
+                    const driverElement = document.createElement('div');
+                    driverElement.className = 'flex items-center p-1 border-b dark:border-gray-700';
+                    driverElement.innerHTML = `
+                        <input type="radio" name="driver-selection" id="driver-${driver.id}" value="${driver.id}" class="mr-2" ${driver.fatigue >= 90 ? 'disabled' : ''}>
+                        <label for="driver-${driver.id}" class="flex-1 text-xs cursor-pointer ${driver.fatigue >= 90 ? 'opacity-50' : ''}">
+                            <div class="font-medium">${driver.name}</div>
+                            <div class="text-gray-500 dark:text-gray-400">
+                                Skill: ${driver.skill}/10, Commission: ${commissionPercentage.toFixed(1)}% (${formatMoney(estimatedEarnings)})
+                            </div>
+                            ${fatigueWarning}
+                        </label>
+                    `;
+                    driversSection.appendChild(driverElement);
+                });
+            }
+            
+            // List available trucks
+            const availableTrucks = gameState.trucks.filter(t => t.status === 'available' && t.capacity >= job.weight);
+            trucksSection.innerHTML = '<div class="text-sm font-semibold mb-1">Select Truck:</div>';
+            
+            if (availableTrucks.length === 0) {
+                trucksSection.innerHTML += '<div class="text-xs text-gray-500 dark:text-gray-400 italic">No suitable trucks available. You need to buy a truck with sufficient capacity.</div>';
+            } else {
+                availableTrucks.forEach(truck => {
+                    // Warn about low condition
+                    const conditionWarning = truck.condition < 30 ? 
+                        `<div class="text-danger text-xs">Warning: Low condition (${Math.round(truck.condition)}%)</div>` : '';
+                    
+                    const truckElement = document.createElement('div');
+                    truckElement.className = 'flex items-center p-1 border-b dark:border-gray-700';
+                    truckElement.innerHTML = `
+                        <input type="radio" name="truck-selection" id="truck-${truck.id}" value="${truck.id}" class="mr-2">
+                        <label for="truck-${truck.id}" class="flex-1 text-xs cursor-pointer">
+                            <div class="font-medium">${truck.brand} ${truck.model}</div>
+                            <div class="text-gray-500 dark:text-gray-400">Capacity: ${truck.capacity} tons, Condition: ${Math.round(truck.condition)}%</div>
+                            ${conditionWarning}
+                        </label>
+                    `;
+                    trucksSection.appendChild(truckElement);
+                });
+            }
+            
+            // Configure accept button
+            acceptButton.setAttribute('data-job-id', job.id);
+            acceptButton.disabled = availableDrivers.length === 0 || availableTrucks.length === 0;
+            
+            if (availableDrivers.length === 0 || availableTrucks.length === 0) {
+                acceptButton.classList.add('opacity-50', 'cursor-not-allowed');
+            } else {
+                acceptButton.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+            
+            // Update accept button state based on selections
+            const updateAcceptButtonState = () => {
+                const driverSelected = document.querySelector('input[name="driver-selection"]:checked');
+                const truckSelected = document.querySelector('input[name="truck-selection"]:checked');
+                
+                if (driverSelected && truckSelected) {
+                    acceptButton.disabled = false;
+                    acceptButton.classList.remove('opacity-50', 'cursor-not-allowed');
+                } else {
+                    acceptButton.disabled = true;
+                    acceptButton.classList.add('opacity-50', 'cursor-not-allowed');
+                }
+            };
+            
+            // Add selection event listeners
+            document.querySelectorAll('input[name="driver-selection"], input[name="truck-selection"]').forEach(input => {
+                input.addEventListener('change', updateAcceptButtonState);
+            });
+            
+            // Show modal
+            modal.classList.remove('hidden');
+        }
+        
+        function showNotification(message, type = 'info') {
+            const notificationArea = document.getElementById('notification-area');
+            const notification = document.createElement('div');
+            
+            // Set classes based on type
+            let typeClass = '';
+            switch (type) {
+                case 'success':
+                    typeClass = 'bg-success text-white';
+                    break;
+                case 'warning':
+                    typeClass = 'bg-warning text-white';
+                    break;
+                case 'error':
+                    typeClass = 'bg-danger text-white';
+                    break;
+                default:
+                    typeClass = 'bg-primary text-white';
+            }
+            
+            notification.className = `${typeClass} p-3 rounded shadow-lg mb-2 transform transition-all duration-300 ease-in-out opacity-0 translate-x-full`;
+            notification.textContent = message;
+            
+            notificationArea.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('opacity-0', 'translate-x-full');
+            }, 10);
+            
+            // Animate out after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('opacity-0', 'translate-x-full');
+                // Remove element after fade out
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, 5000);
+        }
+        
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', () => {
+            // Tab navigation
+            document.querySelectorAll('.tab-button').forEach(button => {
+                button.addEventListener('click', () => {
+                    // Update active tab button
+                    document.querySelectorAll('.tab-button').forEach(btn => {
+                        btn.classList.remove('border-primary');
+                        btn.classList.add('border-transparent');
+                    });
+                    button.classList.remove('border-transparent');
+                    button.classList.add('border-primary');
+                    
+                    // Update active tab content
+                    const tabId = button.getAttribute('data-tab');
+                    document.querySelectorAll('.tab-content').forEach(tab => {
+                        tab.classList.remove('active');
+                    });
+                    document.getElementById(`${tabId}-tab`).classList.add('active');
+                });
+            });
+            
+            // Buy truck button
+            document.getElementById('buy-truck-btn').addEventListener('click', () => {
+                const availableTrucksContainer = document.getElementById('available-trucks');
+                availableTrucksContainer.innerHTML = '';
+                
+                // Generate list of available trucks for purchase
+                truckModels.forEach(model => {
+                    const canAfford = gameState.money >= model.price;
+                    const spaceAvailable = gameState.trucks.length < gameState.garageCapacity;
+                    
+                    const truckElement = document.createElement('div');
+                    truckElement.className = `bg-gray-100 dark:bg-gray-700 p-3 rounded ${(!canAfford || !spaceAvailable) ? 'opacity-50' : ''}`;
+                    truckElement.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="mr-3 text-3xl">${model.image}</div>
+                            <div>
+                                <div class="font-medium">${model.brand} ${model.model}</div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400">
+                                    Capacity: ${model.capacity} tons, Speed: ${model.speed} km/h
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mt-2 text-sm font-medium">${formatMoney(model.price)}</div>
+                        <button class="w-full mt-2 py-1 px-2 ${canAfford && spaceAvailable ? 'bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700' : 'bg-gray-400 dark:bg-gray-600'} text-white rounded text-sm purchase-truck-btn" 
+                            data-truck-id="${model.id}" 
+                            ${(!canAfford || !spaceAvailable) ? 'disabled' : ''}>
+                            ${canAfford ? (spaceAvailable ? 'Purchase' : 'No Garage Space') : 'Insufficient Funds'}
+                        </button>
+                    `;
+                    availableTrucksContainer.appendChild(truckElement);
+                });
+                
+                // Add event listeners for purchase buttons
+                document.querySelectorAll('.purchase-truck-btn').forEach(btn => {
+                    if (!btn.disabled) {
+                        btn.addEventListener('click', e => {
+                            const modelId = e.target.getAttribute('data-truck-id');
+                            purchaseTruck(modelId);
+                        });
+                    }
+                });
+                
+                // Show modal
+                document.getElementById('truck-purchase-modal').classList.remove('hidden');
+            });
+            
+            // Close truck purchase modal
+            document.getElementById('close-purchase-modal').addEventListener('click', () => {
+                document.getElementById('truck-purchase-modal').classList.add('hidden');
+            });
+            
+            // Close truck detail modal
+            document.getElementById('close-detail-modal').addEventListener('click', () => {
+                document.getElementById('truck-detail-modal').classList.add('hidden');
+            });
+            
+            // Sell truck button
+            document.getElementById('sell-truck-btn').addEventListener('click', () => {
+                const truckId = document.getElementById('sell-truck-btn').getAttribute('data-truck-id');
+                sellTruck(truckId);
+            });
+            
+            // Repair truck button
+            document.getElementById('repair-truck-btn').addEventListener('click', () => {
+                const truckId = document.getElementById('repair-truck-btn').getAttribute('data-truck-id');
+                const repairCost = parseInt(document.getElementById('repair-truck-btn').getAttribute('data-repair-cost'));
+                
+                sendTruckToMaintenance(truckId, repairCost);
+            });
+            
+            // Mechanic hire buttons
+            document.getElementById('hire-mechanic-3').addEventListener('click', () => {
+                if (gameState.money >= 20000 && gameState.mechanicsCount < 3) {
+                    gameState.money -= 20000;
+                    gameState.mechanicsCount = 3;
+                    updateGameDisplay();
+                    showNotification('Hired 3rd mechanic! Maintenance is now 20% faster.', 'success');
+                    saveGameState();
+                } else {
+                    showNotification('Cannot hire mechanic. Check funds or if mechanic is already hired.', 'error');
+                }
+            });
+            
+            document.getElementById('hire-mechanic-4').addEventListener('click', () => {
+                if (gameState.money >= 30000 && gameState.mechanicsCount < 4) {
+                    gameState.money -= 30000;
+                    gameState.mechanicsCount = 4;
+                    updateGameDisplay();
+                    showNotification('Hired 4th mechanic! Maintenance is now 30% faster.', 'success');
+                    saveGameState();
+                } else {
+                    showNotification('Cannot hire mechanic. Check funds or if mechanic is already hired.', 'error');
+                }
+            });
+            
+            document.getElementById('hire-mechanic-5').addEventListener('click', () => {
+                if (gameState.money >= 45000 && gameState.mechanicsCount < 5) {
+                    gameState.money -= 45000;
+                    gameState.mechanicsCount = 5;
+                    updateGameDisplay();
+                    showNotification('Hired 5th mechanic! Maintenance is now 50% faster.', 'success');
+                    saveGameState();
+                } else {
+                    showNotification('Cannot hire mechanic. Check funds or if mechanic is already hired.', 'error');
+                }
+            });
+            
+            // Hire driver button
+            document.getElementById('hire-driver-btn').addEventListener('click', () => {
+                const availableDriversContainer = document.getElementById('available-drivers');
+                availableDriversContainer.innerHTML = '';
+                
+                // Generate list of available drivers for hire
+                const availableDrivers = [];
+                const existingDriverNames = gameState.drivers.map(d => d.name);
+                const availableTemplates = driverTemplates.filter(t => !existingDriverNames.includes(t.name));
+
+                // Ensure we have enough available templates
+                if (availableTemplates.length === 0) {
+                    // Create drivers with modified names if all templates are used
+                    for (let i = 0; i < 4; i++) {
+                        const template = driverTemplates[Math.floor(Math.random() * driverTemplates.length)];
+                        const driver = {
+                            ...template,
+                            id: 'driver_' + Date.now() + '_' + i,
+                            name: template.name + ' ' + (Math.floor(Math.random() * 900) + 100), // Add random number to name
+                            salary: Math.round(template.salary * (0.9 + Math.random() * 0.2)),
+                            skill: Math.max(1, Math.min(10, template.skill + Math.floor(Math.random() * 3) - 1))
+                        };
+                        availableDrivers.push(driver);
+                    }
+                } else {
+                    // Use available templates
+                    for (let i = 0; i < Math.min(4, availableTemplates.length); i++) {
+                        const template = availableTemplates[i];
+                        const driver = {
+                            ...template,
+                            id: 'driver_' + Date.now() + '_' + i,
+                            salary: Math.round(template.salary * (0.9 + Math.random() * 0.2)),
+                            skill: Math.max(1, Math.min(10, template.skill + Math.floor(Math.random() * 3) - 1))
+                        };
+                        availableDrivers.push(driver);
+                    }
+                }
+                
+                // Sort by commission (lowest first)
+                availableDrivers.sort((a, b) => calculateDriverCommission(a) - calculateDriverCommission(b));
+                
+                // Create UI elements
+                availableDrivers.forEach(driver => {
+                    const hiringCost = 2000; // Fixed cost to hire a driver
+                    const canAfford = gameState.money >= hiringCost;
+                    const commissionPercentage = calculateDriverCommission(driver);
+                    
+                    const driverElement = document.createElement('div');
+                    driverElement.className = `bg-gray-100 dark:bg-gray-700 p-3 rounded ${!canAfford ? 'opacity-50' : ''}`;
+                    driverElement.innerHTML = `
+                        <div>
+                            <div class="font-medium">${driver.name}</div>
+                            <div class="text-xs text-gray-500 dark:text-gray-400">
+                                Skill: ${driver.skill}/10, Experience: ${driver.experience} years
+                            </div>
+                        </div>
+                        <div class="mt-2 text-sm font-medium">Commission: ${formatCommissionPercentage(commissionPercentage)} per job</div>
+                        <div class="mt-1 text-xs">Hiring cost: ${formatMoney(hiringCost)}</div>
+                        <button class="w-full mt-2 py-1 px-2 ${canAfford ? 'bg-primary hover:bg-secondary dark:bg-blue-600 dark:hover:bg-blue-700' : 'bg-gray-400 dark:bg-gray-600'} text-white rounded text-sm hire-driver-btn" 
+                            data-driver-id="${driver.id}" 
+                            data-driver-name="${driver.name}"
+                            data-driver-salary="${driver.salary}"
+                            data-driver-skill="${driver.skill}"
+                            data-driver-experience="${driver.experience}"
+                            ${!canAfford ? 'disabled' : ''}>
+                            ${canAfford ? 'Hire' : 'Insufficient Funds'}
+                        </button>
+                    `;
+                    availableDriversContainer.appendChild(driverElement);
+                });
+                
+                // Add event listeners for hire buttons
+                document.querySelectorAll('.hire-driver-btn').forEach(btn => {
+                    if (!btn.disabled) {
+                        btn.addEventListener('click', e => {
+                            const driverId = e.target.getAttribute('data-driver-id');
+                            const driverName = e.target.getAttribute('data-driver-name');
+                            const driverSalary = parseInt(e.target.getAttribute('data-driver-salary'));
+                            const driverSkill = parseInt(e.target.getAttribute('data-driver-skill'));
+                            const driverExperience = parseInt(e.target.getAttribute('data-driver-experience'));
+                            
+                            hireDriver({
+                                id: driverId,
+                                name: driverName,
+                                salary: driverSalary,
+                                skill: driverSkill,
+                                experience: driverExperience,
+                                fatigue: 0,
+                                skillProgress: 0,
+                                status: 'available',
+                                jobsCompleted: 0,
+                                totalDistance: 0,
+                                totalEarnings: 0
+                            });
+                        });
+                    }
+                });
+                
+                // Show modal
+                document.getElementById('driver-hire-modal').classList.remove('hidden');
+            });
+            
+            // Close driver hire modal
+            document.getElementById('close-hire-modal').addEventListener('click', () => {
+                document.getElementById('driver-hire-modal').classList.add('hidden');
+            });
+            
+            // Close driver detail modal
+            document.getElementById('close-driver-detail-modal').addEventListener('click', () => {
+                document.getElementById('driver-detail-modal').classList.add('hidden');
+            });
+            
+            // Fire driver button
+            document.getElementById('fire-driver-btn').addEventListener('click', () => {
+                const driverId = document.getElementById('fire-driver-btn').getAttribute('data-driver-id');
+                fireDriver(driverId);
+            });
+            
+            // Close job detail modal
+            document.getElementById('close-job-modal').addEventListener('click', () => {
+                document.getElementById('job-detail-modal').classList.add('hidden');
+            });
+            
+            // Accept job button
+            document.getElementById('accept-job-btn').addEventListener('click', () => {
+                const jobId = document.getElementById('accept-job-btn').getAttribute('data-job-id');
+                const driverId = document.querySelector('input[name="driver-selection"]:checked')?.value;
+                const truckId = document.querySelector('input[name="truck-selection"]:checked')?.value;
+                
+                if (jobId && driverId && truckId) {
+                    acceptJob(jobId, driverId, truckId);
+                }
+            });
+            
+            // Garage upgrades
+            document.getElementById('upgrade-capacity').addEventListener('click', () => {
+                if (gameState.money >= 25000) {
+                    gameState.money -= 25000;
+                    gameState.garageCapacity = 5;
+                    
+                    document.getElementById('garage-capacity').textContent = `${gameState.trucks.length} / ${gameState.garageCapacity} trucks`;
+                    document.getElementById('upgrade-capacity').disabled = true;
+                    document.getElementById('upgrade-capacity').classList.add('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('upgrade-capacity').textContent = 'Upgraded';
+                    
+                    showNotification('Garage capacity upgraded to 5 trucks!', 'success');
+                    saveGameState();
+                } else {
+                    showNotification('Insufficient funds for this upgrade!', 'error');
+                }
+            });
+            
+            document.getElementById('upgrade-maintenance').addEventListener('click', () => {
+                if (gameState.money >= 35000) {
+                    gameState.money -= 35000;
+                    gameState.maintenanceLevel = "Advanced";
+                    
+                    document.getElementById('maintenance-level').textContent = gameState.maintenanceLevel;
+                    document.getElementById('upgrade-maintenance').disabled = true;
+                    document.getElementById('upgrade-maintenance').classList.add('opacity-50', 'cursor-not-allowed');
+                    document.getElementById('upgrade-maintenance').textContent = 'Upgraded';
+                    
+                    showNotification('Maintenance level upgraded to Advanced! Repairs are now 25% cheaper and 30% faster.', 'success');
+                    saveGameState();
+                } else {
+                    showNotification('Insufficient funds for this upgrade!', 'error');
+                }
+            });
+            
+            // Save/Load buttons
+            document.getElementById('export-save').addEventListener('click', function() {
+                const saveData = exportGameSave();
+                
+                // Copy to clipboard
+                const textArea = document.createElement('textarea');
+                textArea.value = saveData;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                
+                showNotification('Save data copied to clipboard!', 'success');
+                
+                // Hide dropdown
+                document.querySelector('.dropdown-menu').classList.add('hidden');
+            });
+            
+            document.getElementById('import-save').addEventListener('click', function() {
+                // Show import modal
+                document.getElementById('import-save-modal').classList.remove('hidden');
+                
+                // Hide dropdown
+                document.querySelector('.dropdown-menu').classList.add('hidden');
+            });
+            
+            document.getElementById('close-import-modal').addEventListener('click', function() {
+                document.getElementById('import-save-modal').classList.add('hidden');
+            });
+            
+            document.getElementById('confirm-import').addEventListener('click', function() {
+                const saveData = document.getElementById('import-save-data').value.trim();
+                
+                if (!saveData) {
+                    showNotification('Please enter save data', 'error');
+                    return;
+                }
+                
+                const importResult = importGameSave(saveData);
+                
+                if (importResult) {
+                    showNotification('Game save imported successfully!', 'success');
+                    document.getElementById('import-save-modal').classList.add('hidden');
+                } else {
+                    showNotification('Invalid save data. Please check and try again.', 'error');
+                }
+            });
+            
+            // Show/hide dropdowns
+            document.addEventListener('click', function(e) {
+                const dropdowns = document.querySelectorAll('.dropdown');
+                
+                dropdowns.forEach(dropdown => {
+                    const button = dropdown.querySelector('button');
+                    const menu = dropdown.querySelector('.dropdown-menu');
+                    
+                    // If the clicked element is the dropdown button, toggle menu
+                    if (e.target === button || button.contains(e.target)) {
+                        menu.classList.toggle('hidden');
+                    } 
+                    // If clicked outside the dropdown, hide menu
+                    else if (!menu.contains(e.target)) {
+                        menu.classList.add('hidden');
+                    }
+                });
+            });
+            
+            // Load game state on start
+            loadGameState();
+            
+            // Setup game loop - update every second
+            setInterval(updateGameState, 1000);
+            
+            // Game loop - update fatigue every 60 seconds (60000 milliseconds)
+            setInterval(updateFatigueOverTime, 60000);
+
+	    // Game loop - update fuel prices every 8 minutes (480000 milliseconds)
+	    setInterval(updateFuelPrices, 480000);
+
+            // Setup job refresh every 5 minutes
+            setInterval(() => {
+                // Generate new jobs
+                const newJobs = generateRandomJobs(Math.floor(Math.random() * 3) + 1);
+                gameState.jobs = gameState.jobs.concat(newJobs);
+                
+                // Remove some old jobs
+                if (gameState.jobs.length > 15) {
+                    // Sort by deadline, remove oldest
+                    gameState.jobs.sort((a, b) => a.deadline - b.deadline);
+                    gameState.jobs = gameState.jobs.slice(0, 15);
+                }
+                
+                updateJobsList();
+                showNotification('New job opportunities available!', 'info');
+            }, 300000); // 5 minutes
+        });
+        
+        // Game actions
+        function sendTruckToMaintenance(truckId, repairCost) {
+            const truck = gameState.trucks.find(t => t.id === truckId);
+            
+            if (!truck) return;
+            
+            if (truck.status !== 'available') {
+                showNotification('Cannot repair a truck that is currently in use!', 'error');
+                return;
+            }
+            
+            if (gameState.money < repairCost) {
+                showNotification('Insufficient funds for truck maintenance!', 'error');
+                return;
+            }
+            
+            // Deduct cost
+            gameState.money -= repairCost;
+            
+            // Set truck to maintenance status
+            truck.status = 'maintenance';
+            const conditionToRepair = 100 - truck.condition;
+            const repairTime = getMaintenanceTime(conditionToRepair);
+            truck.maintenanceCompleteTime = Date.now() + repairTime;
+            truck.repairCost = repairCost;
+            
+            // Close modal
+            document.getElementById('truck-detail-modal').classList.add('hidden');
+            
+            // Show notification
+            showNotification(`${truck.brand} ${truck.model} sent to maintenance. Will be ready in ${(repairTime / (60 * 1000)).toFixed(1)} minutes.`, 'info');
+            
+            // Update game state
+            saveGameState();
+            updateGameDisplay();
+        }
+        
+        function purchaseTruck(modelId) {
+            const model = truckModels.find(m => m.id === modelId);
+            
+            if (!model) return;
+            
+            if (gameState.money < model.price) {
+                showNotification('Insufficient funds to purchase this truck!', 'error');
+                return;
+            }
+            
+            if (gameState.trucks.length >= gameState.garageCapacity) {
+                showNotification('No space in garage! Upgrade capacity or sell a truck.', 'error');
+                return;
+            }
+            
+            // Create new truck
+            const newTruck = {
+                id: 'truck_' + Date.now(),
+                brand: model.brand,
+                model: model.model,
+                price: model.price,
+                capacity: model.capacity,
+                fuelEfficiency: model.fuelEfficiency,
+                speed: model.speed,
+                maintenance: model.maintenance,
+                reliability: model.reliability,
+                image: model.image,
+                condition: 100, // New truck
+                status: 'available'
+            };
+            
+            // Add to fleet
+            gameState.trucks.push(newTruck);
+            
+            // Deduct cost
+            gameState.money -= model.price;
+            
+            // Close modal
+            document.getElementById('truck-purchase-modal').classList.add('hidden');
+            
+            // Show notification
+            showNotification(`Successfully purchased ${model.brand} ${model.model}!`, 'success');
+            
+            // Update game state
+            saveGameState();
+            updateGameDisplay();
+        }
+        
+        function sellTruck(truckId) {
+            const truckIndex = gameState.trucks.findIndex(t => t.id === truckId);
+            
+            if (truckIndex === -1) return;
+            
+            const truck = gameState.trucks[truckIndex];
+            
+            if (truck.status === 'in_job' || truck.status === 'maintenance') {
+                showNotification('Cannot sell a truck that is currently in use or maintenance!', 'error');
+                return;
+            }
+            
+            // Calculate sale value - 80% of current value based on condition
+            const saleValue = Math.round(truck.price * (truck.condition / 100) * 0.8);
+            
+            // Add to balance
+            gameState.money += saleValue;
+            
+            // Remove from fleet
+            gameState.trucks.splice(truckIndex, 1);
+            
+            // Close modal
+            document.getElementById('truck-detail-modal').classList.add('hidden');
+            
+            // Show notification
+            showNotification(`Sold ${truck.brand} ${truck.model} for ${formatMoney(saleValue)}!`, 'success');
+            
+            // Update game state
+            saveGameState();
+            updateGameDisplay();
+        }
+        
+        function hireDriver(driver) {
+            // Deduct hiring cost
+            const hiringCost = 2000; // Fixed cost to hire a driver
+            gameState.money -= hiringCost;
+            
+            // Add to drivers
+            gameState.drivers.push(driver);
+            
+            // Close modal
+            document.getElementById('driver-hire-modal').classList.add('hidden');
+            
+            // Show notification
+            showNotification(`Hired driver ${driver.name}!`, 'success');
+            
+            // Update game state
+            saveGameState();
+            updateGameDisplay();
+        }
+        
+        function fireDriver(driverId) {
+            const driverIndex = gameState.drivers.findIndex(d => d.id === driverId);
+            
+            if (driverIndex === -1) return;
+            
+            const driver = gameState.drivers[driverIndex];
+            
+            if (driver.status === 'in_job') {
+                showNotification('Cannot fire a driver who is currently on a job!', 'error');
+                return;
+            }
+            
+            // Remove from drivers
+            gameState.drivers.splice(driverIndex, 1);
+            
+            // Close modal
+            document.getElementById('driver-detail-modal').classList.add('hidden');
+            
+            // Show notification
+            showNotification(`Fired driver ${driver.name}!`, 'warning');
+            
+            // Update game state
+            saveGameState();
+            updateGameDisplay();
+        }
+        
+        function acceptJob(jobId, driverId, truckId) {
+            const driver = gameState.drivers.find(d => d.id === driverId);
+            const truck = gameState.trucks.find(t => t.id === truckId);
+            const job = gameState.jobs.find(j => j.id === jobId);
+
+            // Check if job, driver, and truck exist
+            if (!job || !driver || !truck) {
+                showNotification('Invalid job, driver, or truck selection!', 'error');
+                return;
+            }
+
+            // Check for high fatigue
+            if (driver.fatigue >= 70) {
+                showNotification(`${driver.name} is fatigued! Assigning a job may lead to accidents.`, 'warning');
+            }
+
+            // Block job assignment if fatigue is too high
+            if (driver.fatigue >= 90) {
+                showNotification(`${driver.name} is too fatigued to take a job! Wait until fatigue recovers.`, 'error');
+                return;
+            }
+
+            // Check if truck capacity is sufficient
+            if (truck.capacity < job.weight) {
+                showNotification(`${truck.brand} ${truck.model} doesn't have enough capacity for this job!`, 'error');
+                return;
+            }
+
+            // Prepare the job for active jobs list
+            // Driver skill affects average speed (0.5 base multiplier + skill bonus)
+            const avgSpeed = truck.speed * (0.5 + (driver.skill / 20));
+            const totalTime = job.distance / avgSpeed * 3600; // Convert to seconds
+
+            const activeJob = {
+                ...job,
+                status: 'in_progress',
+                assignedDriverId: driver.id,
+                assignedTruckId: truck.id,
+                driverName: driver.name,
+                truckBrand: truck.brand,
+                truckModel: truck.model,
+                startTime: Date.now(),
+                elapsedTime: 0,
+                totalTime: totalTime
+            };
+
+            // Update driver and truck status
+            driver.status = 'in_job';
+            truck.status = 'in_job';
+
+            // Remove from available jobs
+            const jobIndex = gameState.jobs.indexOf(job);
+            if (jobIndex !== -1) {
+                gameState.jobs.splice(jobIndex, 1);
+            }
+
+            // Add to active jobs
+            gameState.activeJobs.push(activeJob);
+
+            // Close modal
+            document.getElementById('job-detail-modal').classList.add('hidden');
+
+            // Show notification
+            showNotification(`Job accepted! ${driver.name} is now delivering to ${job.to.name}.`, 'success');
+
+            // Update game state
+            saveGameState();
+            updateGameDisplay();
+        }
+    </script>
+</body>
+</html>
